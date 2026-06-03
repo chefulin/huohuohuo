@@ -224,26 +224,28 @@
     },
 
     respond: function(to, from, action) {
+      // 本地更新
       var data = LS.get('huoqi_friend_requests') || {};
       var list = data[to] || [];
       var req = list.find(function(r) { return r.from === from && r.status === 'pending'; });
       if (!req) return Promise.resolve({ success: false, error: '申请不存在' });
       req.status = action === 'accept' ? 'accepted' : 'rejected';
       LS.set('huoqi_friend_requests', data);
+      // 先写本地缓存，同时调API
       if (action === 'accept') {
         FriendDB.addFriend(from, to);
-        // 双向写入旧格式 huoqi_friends（兜底兼容）
         var allFriends = LS.get('huoqi_friends') || {};
         if (!allFriends[from]) allFriends[from] = [];
         if (!allFriends[to]) allFriends[to] = [];
         if (allFriends[from].indexOf(to) < 0) allFriends[from].push(to);
         if (allFriends[to].indexOf(from) < 0) allFriends[to].push(from);
         LS.set('huoqi_friends', allFriends);
-        // 确保双方用户数据在缓存中
-        var fu = UserDB.findById(from);
-        var tu = UserDB.findById(to);
-        if (fu) CACHE.addUser(fu);
-        if (tu) CACHE.addUser(tu);
+      }
+      // 调后端API（关键）
+      if (ONLINE) {
+        return api('/api/friends/respond', { method:'POST', body:{from:from, to:to, action:action} })
+        .then(function(r) { return r; })
+        .catch(function() { return { success: true }; });
       }
       return Promise.resolve({ success: true });
     }

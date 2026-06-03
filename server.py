@@ -346,12 +346,18 @@ def admin_users():
 # ============================================================
 @app.route('/')
 def index():
-    return send_from_directory(SRC_DIR, 'login.html')
+    try:
+        return send_from_directory(SRC_DIR, 'login.html')
+    except:
+        return jsonify({'success':True,'msg':'火气很大H5后端运行中','static_dir':SRC_DIR,'files':os.listdir(SRC_DIR)[:10] if os.path.exists(SRC_DIR) else 'DIR_NOT_FOUND'})
 
 @app.route('/<path:path>')
 def static_files(path):
     if path.startswith('api/'): return jsonify({'success':False,'error':'Unknown'}),404
-    return send_from_directory(SRC_DIR, path)
+    try:
+        return send_from_directory(SRC_DIR, path)
+    except:
+        return jsonify({'error':'File not found','path':path,'static_dir':SRC_DIR}),404
 
 # ============================================================
 # 启动

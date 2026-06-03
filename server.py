@@ -190,7 +190,7 @@ def respond_friend_request():
     db = get_db()
     db.execute("UPDATE friend_requests SET status=? WHERE from_user=? AND to_user=? AND status='pending'",
         (action, from_u, to_u))
-    if action == 'accepted':
+    if action in ('accept', 'accepted'):
         a, b = sorted([from_u, to_u])
         db.execute("INSERT OR IGNORE INTO friends (user_a,user_b) VALUES (?,?)", (a, b))
     db.commit()

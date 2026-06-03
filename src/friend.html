@@ -1,0 +1,283 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>好友 — 我现在火气很大</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #FFF8D6; min-height: 100vh; padding-bottom: 80px; overflow-x: hidden; }
+.page { width: 100%; max-width: 414px; margin: 0 auto; }
+.top-bar { background: #FFE899; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+.top-bar .user-info { display: flex; align-items: center; gap: 10px; }
+.top-bar .avatar-sm { width: 40px; height: 40px; border-radius: 50%; background: #FFF; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+.top-bar .nickname { font-size: 15px; font-weight: 700; color: #555; }
+.top-bar .uid { font-size: 10px; color: #BBB; }
+.top-bar .values { display: flex; gap: 14px; }
+.top-bar .val-item { text-align: center; }
+.top-bar .val-num { font-size: 16px; font-weight: 800; }
+.top-bar .val-num.anger { color: #FFAB76; }
+.top-bar .val-num.tolerance { color: #81C784; }
+.top-bar .val-label { font-size: 10px; color: #999; }
+.content { padding: 12px 16px; }
+.search-bar { display: flex; gap: 8px; margin-bottom: 10px; }
+.search-bar input { flex: 1; height: 42px; border: 1.5px solid #EEE; border-radius: 21px; padding: 0 18px; font-size: 13px; background: #FFF; outline: none; }
+.search-bar input:focus { border-color: #B8D8FF; }
+.search-bar .btn-search { width: 72px; height: 42px; border: none; border-radius: 21px; background: #B8D8FF; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; flex-shrink: 0; }
+.search-bar .btn-search:active { background: #A0C8F8; }
+.search-result { background: #FFF; border-radius: 14px; padding: 14px; margin-bottom: 10px; display: none; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+.search-result.show { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.notice-bar { background: #FFF; border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; display: none; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border-left: 4px solid #FFAB76; }
+.notice-bar .notice-text { font-size: 13px; font-weight: 600; color: #555; }
+.notice-bar .notice-badge { background: #FF6B6B; color: #FFF; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 10px; min-width: 22px; text-align: center; }
+.anon-tip { background: #FFF; border-radius: 10px; padding: 8px 14px; margin-bottom: 12px; font-size: 11px; color: #BBB; text-align: center; border: 1px dashed #EEE; }
+.avatar-pager { position: relative; background: #FFF; border-radius: 20px; padding: 20px 8px 16px; box-shadow: 0 3px 16px rgba(0,0,0,0.05); margin-bottom: 12px; }
+.avatar-pager .page-indicator { text-align: center; font-size: 12px; color: #CCC; margin-bottom: 14px; }
+.avatar-pager .page-indicator .cur { color: #555; font-weight: 700; }
+.avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 8px; }
+.avatar-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; position: relative; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.avatar-cell .avt-img { width: 64px; height: 64px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: transform 0.15s; position: relative; border: 3px solid #FFF; }
+.avt-img.frame-calm { border-color: #64B5F6 !important; box-shadow: 0 0 14px rgba(100,181,246,0.35), inset 0 0 12px rgba(129,199,132,0.15); background: linear-gradient(135deg, #E3F2FD, #E8F5E9); }
+.avt-img.frame-bamboo { border-color: #81C784 !important; box-shadow: 0 0 12px rgba(129,199,132,0.4); background: linear-gradient(180deg, #F1F8E9, #E8F5E9); }
+.avt-img.frame-capybara { border-color: #A1887F !important; box-shadow: 0 0 12px rgba(161,136,127,0.35); background: linear-gradient(135deg, #EFEBE9, #F5F0EC); }
+.avt-img.frame-cloud { border-color: #B0BEC5 !important; box-shadow: 0 0 14px rgba(176,190,197,0.3); background: linear-gradient(180deg, #ECEFF1, #FFF); }
+.avt-img.frame-master { border-color: #1E88E5 !important; box-shadow: 0 0 16px rgba(30,136,229,0.5); background: linear-gradient(135deg, #E3F2FD, #BBDEFB); animation: masterGlow 2.5s ease-in-out infinite; }
+@keyframes masterGlow { 0%,100% { box-shadow: 0 0 12px rgba(30,136,229,0.4); } 50% { box-shadow: 0 0 24px rgba(30,136,229,0.7); } }
+.avt-img.frame-smile { border-color: #FFD54F !important; box-shadow: 0 0 16px rgba(255,213,79,0.5); background: linear-gradient(135deg, #FFFDE7, #FFF8E1); }
+.avt-img.frame-zen { border: 3px solid transparent !important; background: linear-gradient(#FFF, #FFF) padding-box, linear-gradient(135deg, #64B5F6, #81C784, #FFD54F, #FFAB76) border-box; box-shadow: 0 0 20px rgba(100,181,246,0.45); animation: zenShine 3s ease-in-out infinite; }
+@keyframes zenShine { 0%,100% { box-shadow: 0 0 16px rgba(100,181,246,0.4); } 33% { box-shadow: 0 0 24px rgba(129,199,132,0.5); } 66% { box-shadow: 0 0 24px rgba(255,213,79,0.5); } }
+.avatar-cell .avt-name { font-size: 11px; font-weight: 600; color: #666; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+.avatar-cell .avt-values { display: flex; gap: 6px; font-size: 10px; }
+.avatar-cell .avt-v-anger { color: #FFAB76; }
+.avatar-cell .avt-v-tolerance { color: #81C784; }
+.avatar-cell .chat-badge { position: absolute; top: -2px; right: 0; width: 22px; height: 22px; border-radius: 50%; background: #B8D8FF; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.12); z-index: 2; }
+.avatar-cell .avt-title-badge { font-size: 8px; background: linear-gradient(135deg, #FF6B35, #FFD54F, #FFAB76); background-size: 200% 200%; color: #FFF; padding: 2px 6px; border-radius: 7px; font-weight: 800; animation: bestShine 2s ease-in-out infinite; box-shadow: 0 1px 5px rgba(255,107,53,0.45); max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+@keyframes bestShine { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.pager-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 0 8px; }
+.pager-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #DDD; background: #FFF; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #999; }
+.pager-btn:active { background: #F0F0F0; }
+.pager-btn:disabled { opacity: 0.3; }
+.pager-dots { display: flex; gap: 6px; }
+.pager-dot { width: 6px; height: 6px; border-radius: 50%; background: #DDD; transition: all 0.2s; }
+.pager-dot.active { background: #B8D8FF; width: 18px; border-radius: 3px; }
+.hit-effect { position: fixed; z-index: 200; pointer-events: none; font-size: 72px; animation: hitExplode 0.6s ease-out forwards; }
+@keyframes hitExplode { 0% { opacity: 0; transform: scale(0.2) rotate(-15deg); } 15% { opacity: 1; transform: scale(1.4) rotate(5deg); } 30% { opacity: 1; transform: scale(0.9) rotate(-2deg); } 45% { opacity: 1; transform: scale(1.2) rotate(0deg); } 70% { opacity: 0.7; transform: scale(1.5) rotate(10deg); } 100% { opacity: 0; transform: scale(2.2) rotate(25deg) translateY(-30px); } }
+.screen-shake { animation: shakeScreen 0.35s ease-out; }
+@keyframes shakeScreen { 0%,100% { transform: translateX(0); } 10% { transform: translateX(-6px) translateY(2px); } 20% { transform: translateX(5px) translateY(-3px); } 30% { transform: translateX(-4px) translateY(1px); } 40% { transform: translateX(3px) translateY(-2px); } 50% { transform: translateX(-2px); } 60% { transform: translateX(2px); } 80% { transform: translateX(-1px); } }
+.hit-particle { position: fixed; z-index: 200; pointer-events: none; font-size: 24px; animation: particleFly 0.55s ease-out forwards; }
+@keyframes particleFly { 0% { opacity: 1; transform: translate(0,0) scale(0.5); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.2); } }
+.love-effect { position: fixed; z-index: 200; pointer-events: none; font-size: 36px; animation: loveRise 0.9s ease-out forwards; }
+@keyframes loveRise { 0% { opacity: 0; transform: scale(0.4) translateY(0); } 25% { opacity: 1; transform: scale(1.2) translateY(-15px); } 50% { opacity: 0.8; transform: scale(1) translateY(-35px); } 100% { opacity: 0; transform: scale(0.5) translateY(-90px); } }
+@keyframes numBounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+.num-bounce { animation: numBounce 0.3s ease; }
+.modal-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #FFF; border-radius: 20px; padding: 24px; width: 88%; max-width: 360px; max-height: 70vh; overflow-y: auto; }
+.modal h3 { font-size: 17px; color: #555; margin-bottom: 16px; text-align: center; }
+.req-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F0F0F0; }
+.req-name { font-size: 14px; font-weight: 600; color: #555; }
+.req-actions { display: flex; gap: 8px; }
+.req-actions button { padding: 6px 16px; border-radius: 14px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; }
+.accept-btn { background: #81C784; color: #FFF; }
+.reject-btn { background: #F0F0F0; color: #999; }
+.close-btn { display: block; margin: 16px auto 0; padding: 8px 32px; border-radius: 16px; border: 1.5px solid #DDD; background: #FFF; font-size: 14px; color: #999; cursor: pointer; }
+.empty-state { text-align: center; padding: 40px 20px; }
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state .empty-text { font-size: 14px; color: #BBB; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 20px; font-size: 13px; font-weight: 600; z-index: 999; animation: slideDown 0.3s ease; }
+.toast.success { background: #81C784; color: #FFF; }
+.toast.error { background: #FF6B6B; color: #FFF; }
+.toast.info { background: #B8D8FF; color: #555; }
+@keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.cool-down-modal .modal { text-align: center; }
+.cool-down-modal .fire-icon { font-size: 56px; margin: 8px 0; }
+.cool-down-modal .tip-text { font-size: 14px; color: #777; line-height: 1.8; padding: 0 8px; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: #FFF; display: flex; border-top: 1px solid #EEE; max-width: 414px; margin: 0 auto; padding-bottom: env(safe-area-inset-bottom); }
+.bottom-nav .nav-item { flex: 1; text-align: center; padding: 8px 0 6px; cursor: pointer; color: #BBB; transition: all 0.15s; text-decoration: none; font-size: 10px; }
+.bottom-nav .nav-item .nav-icon { font-size: 22px; display: block; margin-bottom: 1px; }
+.bottom-nav .nav-item:active { background: #FAFAFA; }
+.bottom-nav .nav-item.active { color: #B8D8FF; }
+.avatar-img { border-radius: 50%; object-fit: cover; }
+.avatar-picker-popup .avatar-option { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; border: 2px solid transparent; background: #F5F5F5; transition: all 0.15s; }
+.avatar-picker-popup .avatar-option:active { transform: scale(0.9); }
+.avatar-picker-popup .avatar-option.selected { border-color: #B8D8FF; background: #E3F2FD; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top-bar" id="top-bar">
+    <div class="user-info">
+      <div class="avatar-sm" id="my-avatar-sm" onclick="openAvatarPicker()" style="cursor:pointer" title="点击更换头像">😐</div>
+      <div>
+        <div class="nickname" id="my-nickname">---</div>
+        <div class="uid" id="my-id">---</div>
+      </div>
+    </div>
+    <div class="values">
+      <div class="val-item"><div class="val-num anger" id="my-anger">0</div><div class="val-label">火气值</div></div>
+      <div class="val-item"><div class="val-num tolerance" id="my-tolerance">0</div><div class="val-label">包容值</div></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="anon-tip">🔒 互动完全匿名 — 对方不知道谁点了Ta，仅感知数值变化</div>
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="搜索手机号或用户ID" />
+      <button class="btn-search" onclick="searchUser()">搜索</button>
+    </div>
+    <div class="search-result" id="search-result"></div>
+    <div class="notice-bar" id="notice-bar" onclick="openRequests()">
+      <span class="notice-text">📬 好友申请</span><span class="notice-badge" id="notice-count">0</span>
+    </div>
+    <div class="avatar-pager" id="avatar-pager">
+      <div class="page-indicator">第 <span class="cur" id="page-cur">1</span> / <span id="page-total">1</span> 页</div>
+      <div class="avatar-grid" id="avatar-grid"></div>
+      <div class="pager-controls">
+        <button class="pager-btn" id="pager-prev" onclick="prevPage()">◀</button>
+        <div class="pager-dots" id="pager-dots"></div>
+        <button class="pager-btn" id="pager-next" onclick="nextPage()">▶</button>
+      </div>
+    </div>
+    <div class="empty-state" id="empty-friends">
+      <div class="empty-icon">😶</div><div class="empty-text">还没有好友，搜一搜添加吧</div>
+    </div>
+  </div>
+</div>
+<div class="bottom-nav" id="bottom-nav">
+  <div class="nav-item active" onclick="location.href='friend.html'"><span class="nav-icon">🏠</span>好友</div>
+  <div class="nav-item" onclick="location.href='rank.html'"><span class="nav-icon">🏆</span>排行</div>
+  <div class="nav-item" onclick="location.href='recommend.html'"><span class="nav-icon">🌟</span>推荐</div>
+  <div class="nav-item" onclick="location.href='shop.html'"><span class="nav-icon">🛍️</span>商城</div>
+  <div class="nav-item" onclick="location.href='share.html'"><span class="nav-icon">📤</span>分享</div>
+</div>
+<div class="modal-overlay" id="request-modal">
+  <div class="modal"><h3>📬 好友申请</h3><div id="request-list"></div><button class="close-btn" onclick="closeRequests()">关闭</button></div>
+</div>
+<script src="js/data.js"></script>
+<script>
+const currentUser = HQ.UserDB.current();
+if (!currentUser) { window.location.href = 'login.html'; }
+const PER_PAGE = 4;
+let currentPage = 0, friends = [], longPressTimer = null, activeFriendId = null;
+function init() {
+  document.getElementById('my-nickname').textContent = currentUser.nickname;
+  document.getElementById('my-id').textContent = 'ID: ' + currentUser.id;
+  setMyAvatar(); refreshMyValues(); loadFriends(); updateNoticeBadge(); checkAngerLimit();
+}
+function setMyAvatar() { var u=HQ.UserDB.findById(currentUser.id)||currentUser; var el=document.getElementById('my-avatar-sm'); if(!el)return; renderAvatarEl(el,u,'😊'); }
+function renderAvatarEl(el,user,fallback){ if(!el)return; var av=user.avatar||fallback||'😊'; el.innerHTML=''; if(av.startsWith('http')){var img=document.createElement('img');img.src=av;img.className='avatar-img';img.style.width='100%';img.style.height='100%';img.onerror=function(){el.textContent=fallback||'😊';};el.appendChild(img);}else{el.textContent=av;} }
+function renderAvatarHTML(user,fallback){ var av=user.avatar||fallback||'😊'; if(av.startsWith('http'))return'<img src="'+av+'" class="avatar-img" style="width:100%;height:100%" onerror="this.style.display=\'none\';this.parentElement.textContent=\''+(fallback||'😊')+'\'" />'; return av; }
+function refreshMyValues() { const u = HQ.UserDB.findById(currentUser.id) || currentUser; document.getElementById('my-anger').textContent = u.anger || 0; document.getElementById('my-tolerance').textContent = u.tolerance || 0; }
+function loadFriends() { friends = HQ.FriendDB.getFriends(currentUser.id); currentPage = 0; renderPager(); }
+function renderPager() {
+  const totalPages = Math.ceil(friends.length / PER_PAGE) || 1;
+  if (currentPage >= totalPages) currentPage = totalPages - 1;
+  if (currentPage < 0) currentPage = 0;
+  const start = currentPage * PER_PAGE;
+  const pageFriends = friends.slice(start, start + PER_PAGE);
+  const emptyEl = document.getElementById('empty-friends'), pagerEl = document.getElementById('avatar-pager');
+  if (friends.length === 0) { emptyEl.style.display = 'block'; pagerEl.style.display = 'none'; }
+  else { emptyEl.style.display = 'none'; pagerEl.style.display = 'block'; }
+  document.getElementById('page-cur').textContent = currentPage + 1;
+  document.getElementById('page-total').textContent = totalPages;
+  document.getElementById('avatar-grid').innerHTML = pageFriends.map(f => {
+    const frameClass = f.avatarFrame && f.avatarFrame !== 'default' ? ' frame-' + f.avatarFrame : '';
+    return '<div class="avatar-cell" data-fid="'+f.id+'" onmousedown="startLongPress(event,\''+f.id+'\')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event,\''+f.id+'\')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()" onclick="handleAvatarClick(event,\''+f.id+'\')">'
+      + '<div style="position:relative;display:inline-block"><div class="avt-img'+frameClass+'">'+renderAvatarHTML(f,'😶')+'</div><div class="chat-badge" onclick="event.stopPropagation();goChat(\''+f.id+'\')">💬</div></div>'
+      + '<span class="avt-name">'+f.nickname+'</span>'
+      + (HQ.WeeklyEngine.checkWeeklyQualify(f.id) ? '<span class="avt-title-badge">🏅 最值得交往的朋友</span>' : '')
+      + '<span class="avt-values"><span class="avt-v-anger">🔥'+(f.anger||0)+'</span><span class="avt-v-tolerance">💚'+(f.tolerance||0)+'</span></span></div>';
+  }).join('');
+  for (let i = pageFriends.length; i < PER_PAGE; i++) document.getElementById('avatar-grid').innerHTML += '<div class="avatar-cell" style="visibility:hidden"><div class="avt-img"></div></div>';
+  const dots = document.getElementById('pager-dots'); dots.innerHTML = '';
+  for (let i = 0; i < totalPages; i++) dots.innerHTML += '<div class="pager-dot'+(i===currentPage?' active':'')+'"></div>';
+  document.getElementById('pager-prev').disabled = currentPage === 0;
+  document.getElementById('pager-next').disabled = currentPage >= totalPages - 1;
+}
+function prevPage() { if (currentPage > 0) { currentPage--; renderPager(); } }
+function nextPage() { const tp = Math.ceil(friends.length / PER_PAGE); if (currentPage < tp - 1) { currentPage++; renderPager(); } }
+function startLongPress(e, fid) { activeFriendId = fid; cancelLongPress(); longPressTimer = setTimeout(() => { doLongPress(fid, e); activeFriendId = null; }, 600); }
+function cancelLongPress() { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }
+function handleAvatarClick(e, fid) { if (!activeFriendId || activeFriendId !== fid) return; cancelLongPress(); activeFriendId = null; doClick(fid, e); }
+function doClick(friendId, e) {
+  const res = HQ.ValueEngine.clickAvatar(currentUser.id, friendId);
+  if (!res.success) { showToast(res.error, 'error'); return; }
+  const el = document.querySelector('.avatar-cell[data-fid="'+friendId+'"] .avt-img');
+  const rect = el ? el.getBoundingClientRect() : { left:150, top:300, width:64, height:64 };
+  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  if (res.effectType === 'hit') {
+    for (let i = 0; i < 5; i++) setTimeout(() => spawnEffect('💥', cx+(Math.random()-0.5)*80, cy+(Math.random()-0.5)*80, 'hit-effect'), i*60);
+    ['💢','🔥','⚡','💨','‼️'].forEach((p,i) => setTimeout(() => { const pel=document.createElement('div'); pel.className='hit-particle'; pel.textContent=p; pel.style.left=cx+'px'; pel.style.top=cy+'px'; pel.style.setProperty('--dx',(Math.random()-0.5)*140+'px'); pel.style.setProperty('--dy',(Math.random()-0.5)*140+'px'); document.body.appendChild(pel); setTimeout(()=>pel.remove(),600); }, i*40));
+    document.body.classList.add('screen-shake'); setTimeout(()=>document.body.classList.remove('screen-shake'),350);
+    showToast('你的包容值 +1（匿名操作）', 'success');
+  } else {
+    for (let i=0;i<5;i++) setTimeout(()=>spawnEffect('❤️',cx+(Math.random()-0.5)*50,cy+(Math.random()-0.5)*50,'love-effect'),i*80);
+    showToast('火气≥999，强制安抚模式（匿名操作）', 'info');
+  }
+  bounceValue('my-tolerance'); refreshMyValues(); updateFriendDisplay(friendId);
+}
+function doLongPress(friendId, e) {
+  const res = HQ.ValueEngine.longPressAvatar(currentUser.id, friendId);
+  if (!res.success) { showToast(res.error,'error'); return; }
+  const el = document.querySelector('.avatar-cell[data-fid="'+friendId+'"] .avt-img');
+  const rect = el ? el.getBoundingClientRect() : { left:150,top:300,width:64,height:64 };
+  const cx = rect.left+rect.width/2, cy = rect.top+rect.height/2;
+  for (let i=0;i<5;i++) setTimeout(()=>spawnEffect('❤️',cx+(Math.random()-0.5)*60,cy+(Math.random()-0.5)*30,'love-effect'),i*120);
+  showToast('安抚成功！你的包容值 +1，好友火气 -1 ❤️','success');
+  bounceValue('my-tolerance'); refreshMyValues(); updateFriendDisplay(friendId);
+}
+function spawnEffect(emoji,x,y,cls) { const el=document.createElement('div'); el.className=cls; el.textContent=emoji; el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el); setTimeout(()=>el.remove(), cls==='hit-effect'?600:cls==='hit-particle'?550:900); }
+function bounceValue(id) { const el=document.getElementById(id); if(!el)return; el.classList.remove('num-bounce'); void el.offsetWidth; el.classList.add('num-bounce'); }
+function updateFriendDisplay(fid) { const old=friends; friends=HQ.FriendDB.getFriends(currentUser.id); const start=currentPage*PER_PAGE; const pageF=friends.slice(start,start+PER_PAGE); const changed=old.slice(start,start+PER_PAGE).some((f,i)=>pageF[i]&&(f.anger!==pageF[i].anger||f.tolerance!==pageF[i].tolerance)); if(changed||old.length!==friends.length)renderPager(); }
+function goChat(fid) { window.location.href='chat.html?friend='+fid; }
+function searchUser() {
+  var kw=document.getElementById('search-input').value.trim(); var el=document.getElementById('search-result');
+  if(!kw){el.classList.remove('show');return;}
+  HQ.UserDB.search(kw).then(function(rs) {
+  if(!rs || !rs.length){el.classList.add('show');el.innerHTML='<div style="text-align:center;padding:16px;color:#BBB">未找到该用户（请确认后端已启动）</div>';return;}
+  var u=rs[0]; var isF=HQ.FriendDB.isFriend(currentUser.id,u.id); var isSelf=u.id===currentUser.id;
+  var pending=HQ.RequestDB.getPending(u.id).some(function(r){return r.from===currentUser.id;});
+  el.classList.add('show');
+  el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:10px"><div style="width:40px;height:40px;border-radius:50%;background:#F5F5F5;display:flex;align-items:center;justify-content:center;font-size:20px">'+(u.avatar||'😶')+'</div><div><div style="font-size:14px;font-weight:600;color:#555">'+u.nickname+'</div><div style="font-size:10px;color:#BBB">ID: '+u.id+'</div></div></div>'+(isSelf?'<span style="color:#BBB;font-size:12px">你自己</span>':isF?'<span style="color:#81C784;font-size:12px;font-weight:600">已是好友 ✓</span>':pending?'<button style="padding:6px 16px;border-radius:14px;border:none;background:#FFE899;font-size:12px;font-weight:600;color:#555" disabled>已申请</button>':'<button style="padding:6px 16px;border-radius:14px;border:none;background:#B8D8FF;font-size:12px;font-weight:600;color:#555;cursor:pointer" onclick="sendRequest(\''+u.id+'\')">加好友</button>')+'</div>';
+  });
+}
+function sendRequest(toId) { HQ.RequestDB.send(currentUser.id,toId).then(function(res) { showToast(res.success?'申请已发送 📩':res.error,res.success?'success':'error'); if(res.success)searchUser(); }); }
+function updateNoticeBadge() { var reqs=HQ.RequestDB.getPending(currentUser.id); document.getElementById('notice-bar').style.display=reqs.length?'flex':'none'; document.getElementById('notice-count').textContent=reqs.length; }
+function openRequests() { var reqs=HQ.RequestDB.getPending(currentUser.id); document.getElementById('request-list').innerHTML=reqs.length?reqs.map(function(r){var fu=HQ.UserDB.findById(r.from);return'<div class="req-item"><span class="req-name">'+(fu?fu.nickname:'未知用户')+'</span><div class="req-actions"><button class="accept-btn" onclick="respondReq(\''+r.from+'\',\'accept\')">同意</button><button class="reject-btn" onclick="respondReq(\''+r.from+'\',\'reject\')">拒绝</button></div></div>';}).join(''):'<div style="text-align:center;padding:16px;color:#BBB">暂无申请</div>'; document.getElementById('request-modal').classList.add('show'); }
+function closeRequests() { document.getElementById('request-modal').classList.remove('show'); loadFriends(); updateNoticeBadge(); }
+function respondReq(fromId,action) { HQ.RequestDB.respond(currentUser.id,fromId,action).then(function(res) { showToast(action==='accept'?'已添加好友 🎉':'已拒绝',action==='accept'?'success':'info'); openRequests(); }); }
+var avatarPresets = ['😊','😎','🐱','🐶','🦊','🐼','🐨','🦁','🐸','🦄','🌸','🔥','💎','🎮','🌈','🍀','🌙','⭐','🎵','💜'];
+function openAvatarPicker() {
+  var u = HQ.UserDB.findById(currentUser.id) || currentUser;
+  var html = '<h3>选择头像</h3><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px">';
+  avatarPresets.forEach(function(emoji) {
+    html += '<div class="avatar-option' + (u.avatar === emoji ? ' selected' : '') + '" onclick="changeAvatar(\'' + emoji + '\')">' + emoji + '</div>';
+  });
+  html += '</div><label style="font-size:12px;color:#999">或输入emoji/图片URL：</label><input type="text" id="avatar-custom-input" placeholder="😎 或 https://..." style="width:100%;height:40px;border:1.5px solid #EEE;border-radius:10px;padding:0 12px;font-size:13px;margin:8px 0" /><button class="close-btn" onclick="applyCustomAvatar()" style="background:#B8D8FF;color:#555;border:none;margin-top:4px">确定更换</button>';
+  var overlay = document.createElement('div');
+  overlay.className = 'modal-overlay show';
+  overlay.innerHTML = '<div class="modal avatar-picker-popup">' + html + '<button class="close-btn" onclick="this.closest(\'.modal-overlay\').remove()">关闭</button></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+}
+function changeAvatar(emoji) {
+  HQ.UserDB.update(currentUser.id, { avatar: emoji }); currentUser.avatar = emoji;
+  setMyAvatar(); loadFriends();
+  document.querySelectorAll('.modal-overlay.show').forEach(function(m) { m.remove(); });
+  showToast('头像已更新！', 'success');
+}
+function applyCustomAvatar() {
+  var val = document.getElementById('avatar-custom-input').value.trim();
+  if (!val) return;
+  HQ.UserDB.update(currentUser.id, { avatar: val }); currentUser.avatar = val;
+  setMyAvatar(); loadFriends();
+  document.querySelectorAll('.modal-overlay.show').forEach(function(m) { m.remove(); });
+  showToast('头像已更新！', 'success');
+}
+function checkAngerLimit() { if((currentUser.anger||0)<999)return; const tip=HQ.getRandomTip(); const overlay=document.createElement('div'); overlay.className='modal-overlay show cool-down-modal'; overlay.innerHTML='<div class="modal"><h3>🔥 火气值爆表！</h3><div class="fire-icon">😤</div><p class="tip-text">'+tip+'</p><p style="font-size:11px;color:#BBB;margin-top:8px">火气≥999期间：单击变安抚、头像框禁用</p><button class="close-btn" onclick="this.closest(\'.modal-overlay\').remove()">我冷静一下</button></div>'; document.body.appendChild(overlay); }
+function showToast(msg,type) { const t=document.createElement('div'); t.className='toast '+(type||'info'); t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
+init();
+</script>
+</body>
+</html>
+

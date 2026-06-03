@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>登录 — 我现在火气很大</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: linear-gradient(180deg, #FFE899 0%, #FFF8D6 40%, #FFFFFF 100%);
+  min-height: 100vh; display: flex; justify-content: center; align-items: center;
+  padding: 16px;
+}
+.page { width: 100%; max-width: 400px; }
+.header { text-align: center; margin-bottom: 32px; }
+.header .logo { font-size: 48px; margin-bottom: 8px; animation: bounce 2s infinite; }
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.header h1 { font-size: 22px; color: #555; font-weight: 700; }
+.header p { font-size: 13px; color: #999; margin-top: 4px; }
+.card { background: #FFF; border-radius: 20px; padding: 28px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+.tabs { display: flex; margin-bottom: 24px; border-bottom: 2px solid #F0F0F0; }
+.tab { flex: 1; text-align: center; padding: 10px 0; font-size: 15px; font-weight: 600; cursor: pointer; color: #999; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab.active { color: #555; border-bottom-color: #B8D8FF; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: #666; margin-bottom: 6px; }
+.form-group input { width: 100%; height: 48px; border: 1.5px solid #EEE; border-radius: 12px; padding: 0 16px; font-size: 15px; background: #FAFAFA; outline: none; transition: border 0.2s; }
+.form-group input:focus { border-color: #B8D8FF; background: #FFF; }
+.form-group input::placeholder { color: #CCC; }
+.error-msg { font-size: 12px; color: #FF6B6B; min-height: 16px; margin-top: 2px; }
+.btn { width: 100%; height: 48px; border: none; border-radius: 24px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
+.btn-primary { background: #B8D8FF; color: #555; }
+.btn-primary:active { background: #A0C8F8; transform: scale(0.98); }
+.switch-hint { text-align: center; margin-top: 16px; font-size: 13px; color: #999; }
+.switch-hint span { color: #B8D8FF; font-weight: 600; cursor: pointer; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 20px; font-size: 14px; font-weight: 600; z-index: 999; animation: slideDown 0.3s ease; }
+.toast.success { background: #81C784; color: #FFF; }
+.toast.error { background: #FF6B6B; color: #FFF; }
+@keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.avatar-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.avatar-option { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; border: 2px solid transparent; background: #F5F5F5; transition: all 0.15s; }
+.avatar-option:active { transform: scale(0.9); }
+.avatar-option.selected { border-color: #B8D8FF; background: #E3F2FD; box-shadow: 0 0 8px rgba(184,216,255,0.5); }
+.avatar-custom-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.avatar-custom-label { font-size: 11px; color: #BBB; white-space: nowrap; }
+.avatar-custom-row input { flex: 1; height: 36px; border: 1.5px solid #EEE; border-radius: 10px; padding: 0 12px; font-size: 13px; background: #FAFAFA; outline: none; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="logo">😤</div>
+    <h1>我现在火气很大</h1>
+    <p>消消火气，攒点包容</p>
+  </div>
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" data-mode="login">登录</div>
+      <div class="tab" data-mode="register">注册</div>
+    </div>
+    <form id="auth-form">
+      <div class="form-group">
+        <label>手机号</label>
+        <input type="tel" id="phone" placeholder="请输入11位手机号" maxlength="11" />
+        <div class="error-msg" id="phone-error"></div>
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="password" placeholder="6-16位密码" maxlength="16" />
+        <div class="error-msg" id="pwd-error"></div>
+      </div>
+      <div class="form-group" id="nickname-group" style="display:none">
+        <label>昵称（选填）</label>
+        <input type="text" id="nickname" placeholder="取个好听的名字吧" maxlength="12" />
+      </div>
+      <div class="form-group" id="avatar-group" style="display:none">
+        <label>选择头像</label>
+        <div class="avatar-picker" id="avatar-picker"></div>
+        <input type="hidden" id="avatar-selected" value="😊" />
+        <div class="avatar-custom-row">
+          <span class="avatar-custom-label">或输入emoji/图片URL：</span>
+          <input type="text" id="avatar-custom" placeholder="😎 或 https://..." maxlength="200" />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" id="submit-btn">登录</button>
+    </form>
+    <div class="switch-hint" id="switch-hint">还没有账号？<span onclick="toggleMode()">立即注册</span></div>
+  </div>
+</div>
+<script src="js/data.js"></script>
+<script>
+let mode = 'login';
+function toggleMode() {
+  mode = mode === 'login' ? 'register' : 'login';
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  document.getElementById('submit-btn').textContent = mode === 'login' ? '登录' : '注册';
+  document.getElementById('nickname-group').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('avatar-group').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('switch-hint').innerHTML = mode === 'login' ? '还没有账号？<span onclick="toggleMode()">立即注册</span>' : '已有账号？<span onclick="toggleMode()">去登录</span>';
+  clearErrors();
+}
+
+// 头像选择
+var presetAvatars = ['😊','😎','🐱','🐶','🦊','🐼','🐨','🦁','🐸','🦄','🌸','🔥','💎','🎮','🌈','🍀','🌙','⭐','🎵','💜'];
+var selectedAvatar = '😊';
+
+function buildAvatarPicker() {
+  var html = '';
+  presetAvatars.forEach(function(emoji) {
+    html += '<div class="avatar-option' + (emoji === selectedAvatar ? ' selected' : '') + '" onclick="pickAvatar(\'' + emoji + '\', this)">' + emoji + '</div>';
+  });
+  document.getElementById('avatar-picker').innerHTML = html;
+}
+
+function pickAvatar(emoji, el) {
+  selectedAvatar = emoji;
+  document.getElementById('avatar-selected').value = emoji;
+  document.getElementById('avatar-custom').value = '';
+  document.querySelectorAll('.avatar-option').forEach(function(o) { o.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => { if (tab.dataset.mode !== mode) toggleMode(); }));
+function clearErrors() { document.getElementById('phone-error').textContent = ''; document.getElementById('pwd-error').textContent = ''; }
+function showToast(msg, type) { const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); }
+function validate() { clearErrors(); let v = true; const phone = document.getElementById('phone').value.trim(); const pwd = document.getElementById('password').value; if (!/^1[3-9]\d{9}$/.test(phone)) { document.getElementById('phone-error').textContent = '请输入正确的11位手机号'; v = false; } if (pwd.length < 6 || pwd.length > 16) { document.getElementById('pwd-error').textContent = '密码长度6-16位'; v = false; } return v; }
+document.getElementById('auth-form').addEventListener('submit', function(e) {
+  e.preventDefault(); if (!validate()) return;
+  const phone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value;
+  const nickname = document.getElementById('nickname').value.trim();
+  if (mode === 'register') {
+    var avatar = document.getElementById('avatar-custom').value.trim() || selectedAvatar;
+    const res = HQ.UserDB.register(phone, password, nickname || undefined, avatar);
+    if (res.success) { showToast('注册成功！', 'success'); setTimeout(() => { window.location.href = 'friend.html'; }, 800); } else { showToast(res.error, 'error'); }
+  }
+  else { const res = HQ.UserDB.login(phone, password); if (res.success) { showToast('登录成功！', 'success'); setTimeout(() => { window.location.href = 'friend.html'; }, 800); } else { showToast(res.error, 'error'); } }
+});
+// 监听自定义头像输入
+document.getElementById('avatar-custom').addEventListener('input', function() {
+  if (this.value.trim()) { document.querySelectorAll('.avatar-option').forEach(function(o) { o.classList.remove('selected'); }); selectedAvatar = this.value.trim(); }
+});
+buildAvatarPicker();
+if (HQ.UserDB.current()) { window.location.href = 'friend.html'; }
+</script>
+</body>
+</html>

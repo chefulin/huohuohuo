@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>后台管理 — 我现在火气很大</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #F0F2F5; color: #333; }
+.page { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.header { background: linear-gradient(135deg, #FFE899, #FFAB76); padding: 24px 28px; border-radius: 16px; margin-bottom: 20px; }
+.header h1 { font-size: 22px; font-weight: 800; color: #555; }
+.header p { font-size: 13px; color: #888; margin-top: 4px; }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.stat-card { background: #FFF; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.stat-card .stat-num { font-size: 36px; font-weight: 800; }
+.stat-card .stat-label { font-size: 13px; color: #999; margin-top: 4px; }
+.stat-card.users .stat-num { color: #1565C0; }
+.stat-card.today .stat-num { color: #2E7D32; }
+.stat-card.anger .stat-num { color: #E65100; }
+.stat-card.tolerance .stat-num { color: #6A1B9A; }
+.panel { background: #FFF; border-radius: 14px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.panel-header h3 { font-size: 16px; font-weight: 700; }
+.search-bar { display: flex; gap: 8px; }
+.search-bar input { width: 220px; height: 36px; border: 1px solid #DDD; border-radius: 8px; padding: 0 12px; font-size: 13px; outline: none; }
+.search-bar input:focus { border-color: #FFAB76; }
+.search-bar button { padding: 0 16px; height: 36px; border: none; border-radius: 8px; background: #FFE899; font-size: 13px; font-weight: 600; cursor: pointer; color: #555; }
+.search-bar button:hover { background: #FFD54F; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: #FAFAFA; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 12px; color: #888; border-bottom: 2px solid #EEE; }
+td { padding: 10px 12px; border-bottom: 1px solid #F5F5F5; }
+tr:hover td { background: #FFFDE7; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge.anger-high { background: #FFEBEE; color: #C62828; }
+.badge.tol-high { background: #E8F5E9; color: #2E7D32; }
+.loading { text-align: center; padding: 40px; color: #CCC; font-size: 14px; }
+.refresh-btn { font-size: 12px; color: #999; cursor: pointer; background: none; border: 1px solid #DDD; padding: 4px 12px; border-radius: 6px; }
+.refresh-btn:hover { background: #F5F5F5; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>😤 火气很大 — 后台管理</h1>
+    <p>用户数据统计 · 实时监控 · 手机号脱敏保护</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card users"><div class="stat-num" id="total-users">-</div><div class="stat-label">📊 注册用户总数</div></div>
+    <div class="stat-card today"><div class="stat-num" id="today-new">-</div><div class="stat-label">🆕 今日新增</div></div>
+    <div class="stat-card anger"><div class="stat-num" id="anger-over">-</div><div class="stat-label">🔥 火气超标 (≥999)</div></div>
+    <div class="stat-card tolerance"><div class="stat-num" id="tol-over">-</div><div class="stat-label">💚 包容达标 (≥999)</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h3>👥 用户明细</h3>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="search-bar">
+          <input type="text" id="search-input" placeholder="搜索手机号或昵称..." />
+          <button onclick="loadUsers()">搜索</button>
+        </div>
+        <button class="refresh-btn" onclick="loadAll()">🔄 刷新</button>
+      </div>
+    </div>
+    <div id="user-table">
+      <div class="loading">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = 'http://localhost:5050';
+
+function loadAll() {
+  loadStats();
+  loadUsers();
+}
+
+function loadStats() {
+  fetch(API + '/api/admin/stats')
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res.success) return;
+      document.getElementById('total-users').textContent = res.stats.totalUsers;
+      document.getElementById('today-new').textContent = res.stats.todayNew;
+      document.getElementById('anger-over').textContent = res.stats.angerOver999;
+      document.getElementById('tol-over').textContent = res.stats.toleranceOver999;
+    })
+    .catch(function() {
+      document.getElementById('total-users').textContent = '⚠';
+      document.getElementById('today-new').textContent = '后端';
+      document.getElementById('anger-over').textContent = '未';
+      document.getElementById('tol-over').textContent = '启动';
+    });
+}
+
+function loadUsers() {
+  var q = document.getElementById('search-input').value.trim();
+  var url = API + '/api/admin/users';
+  if (q) url += '?q=' + encodeURIComponent(q);
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (!res.success || !res.users.length) {
+        document.getElementById('user-table').innerHTML = '<div class="loading">暂无用户数据</div>';
+        return;
+      }
+      var html = '<table><thead><tr><th>用户ID</th><th>手机号</th><th>昵称</th><th>头像</th><th>🔥火气</th><th>💚包容</th><th>头衔</th><th>注册日期</th></tr></thead><tbody>';
+      res.users.forEach(function(u) {
+        var angerBadge = (u.anger||0) >= 999 ? ' <span class="badge anger-high">超标</span>' : '';
+        var tolBadge = (u.tolerance||0) >= 999 ? ' <span class="badge tol-high">达标</span>' : '';
+        html += '<tr>';
+        html += '<td style="font-family:monospace;font-size:11px">' + u.id + '</td>';
+        html += '<td>' + (u.phone_masked || u.phone) + '</td>';
+        html += '<td>' + u.nickname + '</td>';
+        html += '<td style="font-size:20px">' + (u.avatar||'😊') + '</td>';
+        html += '<td><b>' + (u.anger||0) + '</b>' + angerBadge + '</td>';
+        html += '<td><b>' + (u.tolerance||0) + '</b>' + tolBadge + '</td>';
+        html += '<td>' + (u.title || '-') + '</td>';
+        html += '<td>' + (u.registerDate || '-') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      document.getElementById('user-table').innerHTML = html;
+    })
+    .catch(function() {
+      document.getElementById('user-table').innerHTML = '<div class="loading">⚠ 后端未启动，无法加载数据<br><small>请运行 py server.py 启动后端</small></div>';
+    });
+}
+
+// 每30秒自动刷新
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>

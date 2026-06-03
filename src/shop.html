@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>商城 — 我现在火气很大</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #FFF8D6; min-height: 100vh; }
+.page { width: 100%; max-width: 414px; margin: 0 auto; padding-bottom: 70px; }
+.top-bar { background: #FFE899; padding: 14px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
+.top-bar .back-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.7); font-size: 18px; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; }
+.top-bar .back-btn:active { background: #FFF; }
+.top-bar .title { font-size: 17px; font-weight: 700; color: #555; }
+.top-bar .balance { margin-left: auto; font-size: 13px; font-weight: 600; color: #81C784; background: #FFF; padding: 4px 14px; border-radius: 14px; }
+.content { padding: 16px; }
+.locked-banner { text-align: center; padding: 40px 24px; background: #FFF; border-radius: 20px; box-shadow: 0 3px 16px rgba(0,0,0,0.05); }
+.locked-banner .lock-icon { font-size: 56px; margin-bottom: 12px; }
+.locked-banner .lock-text { font-size: 16px; font-weight: 700; color: #999; }
+.locked-banner .lock-sub { font-size: 13px; color: #BBB; margin-top: 6px; line-height: 1.7; }
+.locked-banner .lock-progress { margin-top: 16px; background: #F5F5F5; border-radius: 10px; height: 10px; overflow: hidden; }
+.locked-banner .lock-progress-bar { height: 100%; background: linear-gradient(90deg, #81C784, #4CAF50); border-radius: 10px; transition: width 0.5s ease; }
+.locked-banner .lock-progress-text { font-size: 11px; color: #BBB; margin-top: 6px; }
+.section-title { font-size: 14px; font-weight: 700; color: #999; margin-bottom: 10px; padding-left: 4px; }
+.shop-item { background: #FFF; border-radius: 18px; padding: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); transition: transform 0.15s; }
+.shop-item .item-preview { width: 68px; height: 68px; border-radius: 50%; background: #F5F5F5; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; position: relative; transition: all 0.3s; }
+.shop-item .item-preview .frame-emoji { position: absolute; bottom: -4px; right: -4px; font-size: 18px; z-index: 2; }
+.shop-item .item-preview.frame-calm { border: 3px solid #64B5F6; box-shadow: 0 0 14px rgba(100,181,246,0.35), inset 0 0 12px rgba(129,199,132,0.15); background: linear-gradient(135deg, #E3F2FD, #E8F5E9); }
+.shop-item .item-preview.frame-bamboo { border: 3px solid #81C784; box-shadow: 0 0 12px rgba(129,199,132,0.4); background: linear-gradient(180deg, #F1F8E9, #E8F5E9); }
+.shop-item .item-preview.frame-capybara { border: 3px solid #A1887F; box-shadow: 0 0 12px rgba(161,136,127,0.35); background: linear-gradient(135deg, #EFEBE9, #F5F0EC); }
+.shop-item .item-preview.frame-cloud { border: 3px solid #B0BEC5; box-shadow: 0 0 14px rgba(176,190,197,0.3), 0 0 28px rgba(255,255,255,0.5); background: linear-gradient(180deg, #ECEFF1, #FFF); }
+.shop-item .item-preview.frame-master { border: 3px solid #1E88E5; box-shadow: 0 0 16px rgba(30,136,229,0.5); background: linear-gradient(135deg, #E3F2FD, #BBDEFB); animation: masterGlow 2.5s ease-in-out infinite; }
+@keyframes masterGlow { 0%,100% { box-shadow: 0 0 12px rgba(30,136,229,0.4); } 50% { box-shadow: 0 0 24px rgba(30,136,229,0.7), 0 0 40px rgba(30,136,229,0.2); } }
+.shop-item .item-preview.frame-smile { border: 3px solid #FFD54F; box-shadow: 0 0 16px rgba(255,213,79,0.5); background: linear-gradient(135deg, #FFFDE7, #FFF8E1); }
+.shop-item .item-preview.frame-zen { border: 3px solid transparent; background: linear-gradient(#FFF, #FFF) padding-box, linear-gradient(135deg, #64B5F6, #81C784, #FFD54F, #FFAB76) border-box; box-shadow: 0 0 20px rgba(100,181,246,0.45); animation: zenShine 3s ease-in-out infinite; }
+@keyframes zenShine { 0%,100% { box-shadow: 0 0 16px rgba(100,181,246,0.4); } 33% { box-shadow: 0 0 24px rgba(129,199,132,0.5); } 66% { box-shadow: 0 0 24px rgba(255,213,79,0.5); } }
+.shop-item .item-info { flex: 1; }
+.shop-item .item-name { font-size: 16px; font-weight: 700; color: #555; }
+.shop-item .item-desc { font-size: 12px; color: #999; margin-top: 2px; }
+.shop-item .item-cost { font-size: 13px; font-weight: 600; color: #81C784; margin-top: 4px; }
+.shop-item .buy-btn { padding: 10px 20px; border-radius: 20px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; flex-shrink: 0; transition: all 0.15s; }
+.shop-item .buy-btn.available { background: #B8D8FF; color: #555; }
+.shop-item .buy-btn.available:active { background: #A0C8F8; transform: scale(0.95); }
+.shop-item .buy-btn.owned { background: #F0F0F0; color: #BBB; cursor: default; }
+.shop-item .buy-btn.poor { background: #FFF3E0; color: #FFAB76; cursor: default; }
+.current-badge { position: absolute; bottom: -2px; right: -2px; width: 20px; height: 20px; border-radius: 50%; background: #81C784; font-size: 10px; display: flex; align-items: center; justify-content: center; color: #FFF; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+.anger-disabled-bar { background: #FFEBEE; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; text-align: center; font-size: 12px; color: #C62828; display: none; border: 1px solid #FFCDD2; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 20px; font-size: 13px; font-weight: 600; z-index: 999; animation: slideDown 0.3s ease; }
+.toast.success { background: #81C784; color: #FFF; }
+.toast.error { background: #FF6B6B; color: #FFF; }
+.toast.info { background: #B8D8FF; color: #555; }
+@keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.buy-modal-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; }
+.buy-modal-overlay.show { display: flex; }
+.buy-modal { background: #FFF; border-radius: 20px; padding: 28px 24px; text-align: center; width: 88%; max-width: 320px; }
+.buy-modal .success-icon { font-size: 56px; margin-bottom: 10px; }
+.buy-modal .success-text { font-size: 16px; font-weight: 700; color: #555; }
+.buy-modal .success-sub { font-size: 13px; color: #999; margin-top: 6px; }
+.buy-modal button { margin-top: 18px; padding: 10px 36px; border-radius: 20px; border: none; background: #B8D8FF; font-size: 15px; font-weight: 700; color: #555; cursor: pointer; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: #FFF; display: flex; border-top: 1px solid #EEE; max-width: 414px; margin: 0 auto; padding-bottom: env(safe-area-inset-bottom); }
+.bottom-nav .nav-item { flex: 1; text-align: center; padding: 8px 0 6px; cursor: pointer; color: #BBB; transition: all 0.15s; text-decoration: none; font-size: 10px; }
+.bottom-nav .nav-item .nav-icon { font-size: 22px; display: block; margin-bottom: 1px; }
+.bottom-nav .nav-item:active { background: #FAFAFA; }
+.bottom-nav .nav-item.active { color: #B8D8FF; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top-bar"><button class="back-btn" onclick="history.back()">←</button><span class="title">头像框商城</span><span class="balance" id="balance-display">💚 0</span></div>
+  <div class="content">
+    <div class="anger-disabled-bar" id="anger-disabled-bar">🔥 火气值≥999，所有头像框已被禁用。请先降低火气值。</div>
+    <div class="locked-banner" id="locked-banner">
+      <div class="lock-icon">🔒</div><div class="lock-text">包容值不足，商城未解锁</div>
+      <div class="lock-sub">需要包容值 ≥ 999 才能兑换头像框<br>多去安抚好友攒包容值吧 ❤️</div>
+      <div class="lock-progress"><div class="lock-progress-bar" id="lock-progress-bar" style="width:0%"></div></div>
+      <div class="lock-progress-text" id="lock-progress-text"></div>
+    </div>
+    <div class="section-title" id="shop-title" style="display:none">🎨 可兑换头像框</div>
+    <div id="shop-items"></div>
+  </div>
+</div>
+<div class="bottom-nav"><div class="nav-item" onclick="location.href='friend.html'"><span class="nav-icon">🏠</span>好友</div><div class="nav-item" onclick="location.href='rank.html'"><span class="nav-icon">🏆</span>排行</div><div class="nav-item" onclick="location.href='recommend.html'"><span class="nav-icon">🌟</span>推荐</div><div class="nav-item active" onclick="location.href='shop.html'"><span class="nav-icon">🛍️</span>商城</div><div class="nav-item" onclick="location.href='share.html'"><span class="nav-icon">📤</span>分享</div></div>
+<div class="buy-modal-overlay" id="buy-success-modal"><div class="buy-modal"><div class="success-icon">🎉</div><div class="success-text">兑换成功！</div><div class="success-sub" id="buy-success-msg"></div><button onclick="closeBuyModal()">太棒了</button></div></div>
+<script src="js/data.js"></script>
+<script>
+const currentUser = HQ.UserDB.current();
+if (!currentUser) { window.location.href = 'login.html'; }
+function init() { refreshUser(); renderShop(); }
+function refreshUser() { const u = HQ.UserDB.findById(currentUser.id); if (u) Object.assign(currentUser, u); }
+function renderShop() {
+  refreshUser(); const t = currentUser.tolerance||0, a = currentUser.anger||0;
+  const canAccess = t>=999, angerLocked = a>=999;
+  document.getElementById('balance-display').textContent = '💚 '+t;
+  document.getElementById('anger-disabled-bar').style.display = angerLocked?'block':'none';
+  const lb = document.getElementById('locked-banner'), st = document.getElementById('shop-title'), ie = document.getElementById('shop-items');
+  if(!canAccess) { lb.style.display='block'; st.style.display='none'; ie.innerHTML=''; const pct=Math.min(100,Math.round(t/999*100)); document.getElementById('lock-progress-bar').style.width=pct+'%'; document.getElementById('lock-progress-text').textContent='当前包容值 '+t+' / 999（还差 '+Math.max(0,999-t)+'）'; return; }
+  lb.style.display='none'; st.style.display='block';
+  const items = HQ.ShopEngine.items, cf = currentUser.avatarFrame||'default';
+  ie.innerHTML = items.map(function(item) {
+    const owned=cf===item.frameClass, canAfford=t>=item.cost;
+    let bc,bt,bd;
+    if(owned){bc='owned';bt='已佩戴';bd=true;}
+    else if(angerLocked){bc='poor';bt='已禁用';bd=true;}
+    else if(!canAfford){bc='poor';bt='包容值不足';bd=true;}
+    else{bc='available';bt='兑换';bd=false;}
+    return '<div class="shop-item"><div class="item-preview '+item.frameClass+'">😶<span class="frame-emoji">'+item.emoji+'</span>'+(owned?'<div class="current-badge">✓</div>':'')+'</div><div class="item-info"><div class="item-name">'+item.name+' <span style="font-size:16px">'+item.emoji+'</span></div><div class="item-desc">'+item.desc+'</div><div class="item-cost">💚 '+item.cost+' 包容值</div></div><button class="buy-btn '+bc+'" '+(bd?'disabled':'')+' onclick="purchaseItem(\''+item.id+'\',\''+item.name+'\',\''+item.frameClass+'\')">'+bt+'</button></div>';
+  }).join('');
+}
+function purchaseItem(id,name,fc) { refreshUser(); const res=HQ.ShopEngine.purchase(currentUser.id,id); if(res.success){document.getElementById('buy-success-msg').textContent='你获得了【'+name+'】头像框！';document.getElementById('buy-success-modal').classList.add('show');renderShop();}else{showToast(res.error,'error');} }
+function closeBuyModal() { document.getElementById('buy-success-modal').classList.remove('show'); }
+function showToast(msg,type) { const t=document.createElement('div'); t.className='toast '+(type||'info'); t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
+init();
+</script>
+</body>
+</html>
+

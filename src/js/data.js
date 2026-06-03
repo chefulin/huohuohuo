@@ -164,14 +164,20 @@
   // ============================================================
   var FriendDB = {
     getFriends: function(uid) {
-      // 优先读 huoqi_friends（respond 写入的完整数据）
       var data = LS.get('huoqi_friends') || {};
-      // 也合并 cache 数据
       var cacheIds = LS.get('huoqi_friends_cache_' + uid) || [];
       var fids = data[uid] || [];
-      // 合并去重
       cacheIds.forEach(function(id) { if (fids.indexOf(id) < 0) fids.push(id); });
-      return fids.map(function(id) { return UserDB.findById(id); }).filter(Boolean);
+      return fids.map(function(id) {
+        var u = UserDB.findById(id);
+        if (!u) {
+          // 从完整用户列表搜索
+          var allUsers = LS.get('huoqi_users') || [];
+          u = allUsers.find(function(x) { return x.id === id; });
+          if (u) CACHE.addUser(u);
+        }
+        return u;
+      }).filter(Boolean);
     },
 
     isFriend: function(a, b) {

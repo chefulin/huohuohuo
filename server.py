@@ -58,7 +58,10 @@ def init_db():
     db.commit()
     db.close()
 
-init_db()
+try:
+    init_db()
+except Exception as e:
+    print(f"DB init warning: {e}")
 
 # ============================================================
 # 工具

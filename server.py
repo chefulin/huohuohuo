@@ -261,9 +261,21 @@ def send_chat():
 @app.route('/api/rankings', methods=['GET'])
 def rankings():
     rtype = request.args.get('type','tolerance')
+    uid = request.args.get('uid','')
     column = 'anger' if rtype == 'anger' else 'tolerance'
     db = get_db()
-    users = rows_to_list(db.execute(f"SELECT id,nickname,avatar,avatarFrame,anger,tolerance,title FROM users ORDER BY {column} DESC").fetchall())
+    if uid:
+        friend_rows = db.execute(
+            "SELECT user_b FROM friends WHERE user_a=? UNION SELECT user_a FROM friends WHERE user_b=?",
+            (uid, uid)).fetchall()
+        friend_ids = [uid] + [r[0] for r in friend_rows]
+        placeholders = ','.join(['?' for _ in friend_ids])
+        users = rows_to_list(db.execute(
+            f"SELECT id,nickname,avatar,avatarFrame,anger,tolerance,title FROM users WHERE id IN ({placeholders}) ORDER BY {column} DESC",
+            friend_ids).fetchall())
+    else:
+        users = rows_to_list(db.execute(
+            f"SELECT id,nickname,avatar,avatarFrame,anger,tolerance,title FROM users ORDER BY {column} DESC").fetchall())
     return jsonify({'success':True,'users':users})
 
 @app.route('/api/recommend', methods=['GET'])

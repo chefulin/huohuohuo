@@ -78,7 +78,7 @@ if (!currentUser) { window.location.href = 'login.html'; }
 let currentTab = 'anger';
 function switchTab(tab) { currentTab = tab; document.getElementById('anger-tab').classList.toggle('active', tab==='anger'); document.getElementById('tolerance-tab').classList.toggle('active', tab==='tolerance'); renderRank(); }
 function renderRank() {
-  HQ.RankAPI.getRankings(currentTab).then(function(data) {
+  HQ.RankAPI.getRankings(currentTab, currentUser.id).then(function(data) {
   const listEl = document.getElementById('rank-list'), emptyEl = document.getElementById('empty-rank'), champEl = document.getElementById('champion-card');
   if (!data || data.length === 0) { emptyEl.style.display = 'block'; listEl.innerHTML = ''; champEl.classList.remove('show'); return; }
   emptyEl.style.display = 'none';

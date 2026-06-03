@@ -294,7 +294,6 @@
     },
 
     send: function(from, to, text) {
-      if (ONLINE) return api('/api/chat/send', { method:'POST', body:{from:from, to:to, text:text} });
       var key = 'huoqi_chat_' + [from,to].sort().join('_');
       var msgs = LS.get(key) || [];
       msgs.push({ from: from, to: to, text: text, timestamp: Date.now() });
@@ -373,11 +372,13 @@
   // 排行榜 (必须走API)
   // ============================================================
   var RankAPI = {
-    getRankings: function(type) {
-      if (ONLINE) return api('/api/rankings?type=' + type).then(function(r) { return r.users || []; });
-      var users = CACHE.users();
-      users.sort(function(a,b) { return (b[type]||0) - (a[type]||0); });
-      return Promise.resolve(users);
+    getRankings: function(type, uid) {
+      if (ONLINE) return api('/api/rankings?type=' + type + '&uid=' + (uid || '')).then(function(r) { return r.users || []; });
+      var friends = FriendDB.getFriends(uid);
+      var me = UserDB.findById(uid);
+      var all = [me].concat(friends).filter(Boolean);
+      all.sort(function(a,b) { return (b[type]||0) - (a[type]||0); });
+      return Promise.resolve(all);
     },
     getRecommend: function() {
       if (ONLINE) return api('/api/recommend').then(function(r) { return r; });

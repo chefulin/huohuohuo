@@ -165,11 +165,15 @@
   var FriendDB = {
     getFriends: function(uid) {
       if (ONLINE) {
-        var cached = CACHE.users().filter(function(u) {
-          var fids = LS.get('huoqi_friends_cache_' + uid) || [];
-          return fids.indexOf(u.id) >= 0;
+        // 异步刷新，同步返回缓存
+        api('/api/friends/' + uid).then(function(r) {
+          if (r.friends) {
+            r.friends.forEach(function(f) { CACHE.addUser(f); });
+            LS.set('huoqi_friends_cache_' + uid, r.friends.map(function(f) { return f.id; }));
+          }
         });
-        return cached;
+        var fids = LS.get('huoqi_friends_cache_' + uid) || [];
+        return fids.map(function(id) { return UserDB.findById(id); }).filter(Boolean);
       }
       var data = LS.get('huoqi_friends') || {};
       var fids = data[uid] || [];

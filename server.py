@@ -14,7 +14,7 @@ SRC_DIR = os.path.join(BASE_DIR, 'src')
 app = Flask(__name__, static_folder=SRC_DIR, static_url_path='/static')
 CORS(app)
 
-DB_PATH = os.path.join(BASE_DIR, 'huoqi.db')
+DB_PATH = os.path.join(os.environ.get('RENDER_DISK', BASE_DIR), 'huoqi.db')
 
 # ============================================================
 # 数据库

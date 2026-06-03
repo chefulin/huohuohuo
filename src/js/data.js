@@ -70,6 +70,11 @@
         ONLINE = true;
         CACHE.addUser(res.user);
         CACHE.setCurrentId(res.user.id);
+        // 同时写入 huoqi_users
+        var users = LS.get('huoqi_users') || [];
+        var idx = users.findIndex(function(u){return u.id===res.user.id;});
+        if(idx>=0) users[idx]=res.user; else users.push(res.user);
+        LS.set('huoqi_users', users);
         return res;
       }).catch(function() {
         // Fallback: localStorage
@@ -98,9 +103,13 @@
       return api('/api/login', { method: 'POST', body: { phone: phone, password: password } })
       .then(function(res) {
         if (!res.success) return res;
-        ONLINE = true;  // 登录成功即确认后端在线
+        ONLINE = true;
         CACHE.addUser(res.user);
         CACHE.setCurrentId(res.user.id);
+        var users = LS.get('huoqi_users') || [];
+        var idx = users.findIndex(function(u){return u.id===res.user.id;});
+        if(idx>=0) users[idx]=res.user; else users.push(res.user);
+        LS.set('huoqi_users', users);
         return syncAll(res.user.id).then(function() { return res; });
       }).catch(function() {
         var users = LS.get('huoqi_users') || [];

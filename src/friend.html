@@ -181,14 +181,23 @@ function setMyAvatar() { var u=HQ.UserDB.findById(currentUser.id)||currentUser; 
 function renderAvatarEl(el,user,fallback){ if(!el)return; var av=user.avatar||fallback||'😊'; el.innerHTML=''; if(av.startsWith('http')){var img=document.createElement('img');img.src=av;img.className='avatar-img';img.style.width='100%';img.style.height='100%';img.onerror=function(){el.textContent=fallback||'😊';};el.appendChild(img);}else{el.textContent=av;} }
 function renderAvatarHTML(user,fallback){ var av=user.avatar||fallback||'😊'; if(av.startsWith('http'))return'<img src="'+av+'" class="avatar-img" style="width:100%;height:100%" onerror="this.style.display=\'none\';this.parentElement.textContent=\''+(fallback||'😊')+'\'" />'; return av; }
 function refreshMyValues() { const u = HQ.UserDB.findById(currentUser.id) || currentUser; document.getElementById('my-anger').textContent = u.anger || 0; document.getElementById('my-tolerance').textContent = u.tolerance || 0; }
-function loadFriends() { friends = HQ.FriendDB.getFriends(currentUser.id); renderFriendCards(); }
+function loadFriends() {
+  var fidMap = JSON.parse(localStorage.getItem('huoqi_friends')||'{}');
+  var fids = fidMap[currentUser.id] || [];
+  // 合并两个用户缓存
+  var allUsers = JSON.parse(localStorage.getItem('huoqi_users')||'[]');
+  var cache = JSON.parse(localStorage.getItem('huoqi_users_cache')||'[]');
+  cache.forEach(function(u) { if (!allUsers.find(function(x){return x.id===u.id;})) allUsers.push(u); });
+  friends = fids.map(function(id) { return allUsers.find(function(u) { return u.id === id; }); }).filter(Boolean);
+  renderFriendCards();
+}
 function renderFriendCards() {
   var emptyEl = document.getElementById('empty-friends'), pagerEl = document.getElementById('avatar-pager');
-  if (friends.length === 0) { emptyEl.style.display = 'block'; pagerEl.style.display = 'none'; return; }
+  if (!friends || friends.length === 0) { emptyEl.style.display = 'block'; pagerEl.style.display = 'none'; return; }
   emptyEl.style.display = 'none'; pagerEl.style.display = 'block';
-  var html = '<div style="font-size:12px;color:#999;margin-bottom:8px">共 '+friends.length+' 位好友</div>';
+  var html = '<div style="font-size:12px;color:#999;margin-bottom:8px">共 '+friends.length+' 位好友（上滑查看更多）</div>';
   friends.forEach(function(f) {
-    var fc = f.avatarFrame && f.avatarFrame !== 'default' ? ' frame-' + f.avatarFrame : '';
+    var fc = (f.avatarFrame && f.avatarFrame !== 'default') ? ' frame-' + f.avatarFrame : '';
     html += '<div class="friend-card" data-fid="'+f.id+'" onmousedown="startLongPress(event,\''+f.id+'\')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event,\''+f.id+'\')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()" onclick="handleAvatarClick(event,\''+f.id+'\')">'
       + '<div class="fc-avatar"><div class="fc-avt-img'+fc+'">'+renderAvatarHTML(f,'😶')+'</div></div>'
       + '<div class="fc-info"><div class="fc-name">'+f.nickname+(HQ.WeeklyEngine.checkWeeklyQualify(f.id)?' <span class="avt-title-badge">🏅 最值得交往的朋友</span>':'')+'</div>'
@@ -198,10 +207,6 @@ function renderFriendCards() {
   });
   document.getElementById('avatar-grid').innerHTML = html;
   document.getElementById('pager-dots').innerHTML = '';
-  document.getElementById('page-cur').textContent = '1';
-  document.getElementById('page-total').textContent = '1';
-  document.getElementById('pager-prev').disabled = true;
-  document.getElementById('pager-next').disabled = true;
 }
 function prevPage() {}
 function nextPage() {}
@@ -281,7 +286,44 @@ function closeRequests() {
     updateNoticeBadge();
   });
 }
-function respondReq(fromId,action) { HQ.RequestDB.respond(currentUser.id,fromId,action).then(function(res) { showToast(action==='accept'?'已添加好友 🎉':'已拒绝',action==='accept'?'success':'info'); localStorage.removeItem('huoqi_requests_cache_'+currentUser.id); updateNoticeBadge(); if(action==='accept'){ closeRequests(); loadFriends(); } else { openRequests(); } }); }
+function respondReq(fromId,action) {
+  if (action === 'accept') {
+    // 1. 从请求列表中移除
+    var reqs = JSON.parse(localStorage.getItem('huoqi_friend_requests')||'{}');
+    var list = reqs[currentUser.id] || [];
+    reqs[currentUser.id] = list.filter(function(r) { return r.from !== fromId; });
+    localStorage.setItem('huoqi_friend_requests', JSON.stringify(reqs));
+    localStorage.removeItem('huoqi_requests_cache_'+currentUser.id);
+    // 2. 双向写入好友关系
+    var allFriends = JSON.parse(localStorage.getItem('huoqi_friends')||'{}');
+    if (!allFriends[currentUser.id]) allFriends[currentUser.id] = [];
+    if (!allFriends[fromId]) allFriends[fromId] = [];
+    if (allFriends[currentUser.id].indexOf(fromId) < 0) allFriends[currentUser.id].push(fromId);
+    if (allFriends[fromId].indexOf(currentUser.id) < 0) allFriends[fromId].push(currentUser.id);
+    localStorage.setItem('huoqi_friends', JSON.stringify(allFriends));
+    // 3. 确保对方用户信息在 users 缓存中
+    var fu = HQ.UserDB.findById(fromId);
+    if (fu) {
+      var users = JSON.parse(localStorage.getItem('huoqi_users')||'[]');
+      var idx = users.findIndex(function(u){return u.id===fu.id;});
+      if (idx >= 0) users[idx] = fu; else users.push(fu);
+      localStorage.setItem('huoqi_users', JSON.stringify(users));
+    }
+    // 4. 同步调后端API
+    HQ.RequestDB.respond(currentUser.id, fromId, 'accept');
+    // 5. 关闭弹窗，渲染好友
+    document.getElementById('request-modal').classList.remove('show');
+    showToast('已添加好友 🎉','success');
+    localStorage.setItem('huoqi_requests_cache_'+currentUser.id, '[]');
+    updateNoticeBadge();
+    loadFriends();
+  } else {
+    HQ.RequestDB.respond(currentUser.id, fromId, action).then(function(res) {
+      showToast('已拒绝','info');
+      openRequests();
+    });
+  }
+}
 var avatarPresets = ['😊','😎','🐱','🐶','🦊','🐼','🐨','🦁','🐸','🦄','🌸','🔥','💎','🎮','🌈','🍀','🌙','⭐','🎵','💜'];
 function openAvatarPicker() {
   var u = HQ.UserDB.findById(currentUser.id) || currentUser;

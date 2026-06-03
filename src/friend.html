@@ -93,6 +93,16 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 .cool-down-modal .modal { text-align: center; }
 .cool-down-modal .fire-icon { font-size: 56px; margin: 8px 0; }
 .cool-down-modal .tip-text { font-size: 14px; color: #777; line-height: 1.8; padding: 0 8px; }
+/* 大卡片好友布局 */
+.friend-card { background: #FFF; border-radius: 16px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: transform 0.1s; -webkit-user-select: none; user-select: none; }
+.friend-card:active { transform: scale(0.98); }
+.fc-avatar { flex-shrink: 0; }
+.fc-avt-img { width: 60px; height: 60px; border-radius: 50%; background: #F5F5F5; display: flex; align-items: center; justify-content: center; font-size: 30px; border: 3px solid #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.fc-info { flex: 1; min-width: 0; }
+.fc-name { font-size: 15px; font-weight: 700; color: #555; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fc-values { font-size: 13px; color: #888; margin-top: 4px; }
+.fc-chat-btn { flex-shrink: 0; padding: 8px 16px; border-radius: 20px; border: none; background: #B8D8FF; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; }
+.fc-chat-btn:active { background: #A0C8F8; }
 .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: #FFF; display: flex; border-top: 1px solid #EEE; max-width: 414px; margin: 0 auto; padding-bottom: env(safe-area-inset-bottom); }
 .bottom-nav .nav-item { flex: 1; text-align: center; padding: 8px 0 6px; cursor: pointer; color: #BBB; transition: all 0.15s; text-decoration: none; font-size: 10px; }
 .bottom-nav .nav-item .nav-icon { font-size: 22px; display: block; margin-bottom: 1px; }
@@ -171,41 +181,37 @@ function setMyAvatar() { var u=HQ.UserDB.findById(currentUser.id)||currentUser; 
 function renderAvatarEl(el,user,fallback){ if(!el)return; var av=user.avatar||fallback||'😊'; el.innerHTML=''; if(av.startsWith('http')){var img=document.createElement('img');img.src=av;img.className='avatar-img';img.style.width='100%';img.style.height='100%';img.onerror=function(){el.textContent=fallback||'😊';};el.appendChild(img);}else{el.textContent=av;} }
 function renderAvatarHTML(user,fallback){ var av=user.avatar||fallback||'😊'; if(av.startsWith('http'))return'<img src="'+av+'" class="avatar-img" style="width:100%;height:100%" onerror="this.style.display=\'none\';this.parentElement.textContent=\''+(fallback||'😊')+'\'" />'; return av; }
 function refreshMyValues() { const u = HQ.UserDB.findById(currentUser.id) || currentUser; document.getElementById('my-anger').textContent = u.anger || 0; document.getElementById('my-tolerance').textContent = u.tolerance || 0; }
-function loadFriends() { friends = HQ.FriendDB.getFriends(currentUser.id); currentPage = 0; renderPager(); }
-function renderPager() {
-  const totalPages = Math.ceil(friends.length / PER_PAGE) || 1;
-  if (currentPage >= totalPages) currentPage = totalPages - 1;
-  if (currentPage < 0) currentPage = 0;
-  const start = currentPage * PER_PAGE;
-  const pageFriends = friends.slice(start, start + PER_PAGE);
-  const emptyEl = document.getElementById('empty-friends'), pagerEl = document.getElementById('avatar-pager');
-  if (friends.length === 0) { emptyEl.style.display = 'block'; pagerEl.style.display = 'none'; }
-  else { emptyEl.style.display = 'none'; pagerEl.style.display = 'block'; }
-  document.getElementById('page-cur').textContent = currentPage + 1;
-  document.getElementById('page-total').textContent = totalPages;
-  document.getElementById('avatar-grid').innerHTML = pageFriends.map(f => {
-    const frameClass = f.avatarFrame && f.avatarFrame !== 'default' ? ' frame-' + f.avatarFrame : '';
-    return '<div class="avatar-cell" data-fid="'+f.id+'" onmousedown="startLongPress(event,\''+f.id+'\')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event,\''+f.id+'\')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()" onclick="handleAvatarClick(event,\''+f.id+'\')">'
-      + '<div style="position:relative;display:inline-block"><div class="avt-img'+frameClass+'">'+renderAvatarHTML(f,'😶')+'</div><div class="chat-badge" onclick="event.stopPropagation();goChat(\''+f.id+'\')">💬</div></div>'
-      + '<span class="avt-name">'+f.nickname+'</span>'
-      + (HQ.WeeklyEngine.checkWeeklyQualify(f.id) ? '<span class="avt-title-badge">🏅 最值得交往的朋友</span>' : '')
-      + '<span class="avt-values"><span class="avt-v-anger">🔥'+(f.anger||0)+'</span><span class="avt-v-tolerance">💚'+(f.tolerance||0)+'</span></span></div>';
-  }).join('');
-  for (let i = pageFriends.length; i < PER_PAGE; i++) document.getElementById('avatar-grid').innerHTML += '<div class="avatar-cell" style="visibility:hidden"><div class="avt-img"></div></div>';
-  const dots = document.getElementById('pager-dots'); dots.innerHTML = '';
-  for (let i = 0; i < totalPages; i++) dots.innerHTML += '<div class="pager-dot'+(i===currentPage?' active':'')+'"></div>';
-  document.getElementById('pager-prev').disabled = currentPage === 0;
-  document.getElementById('pager-next').disabled = currentPage >= totalPages - 1;
+function loadFriends() { friends = HQ.FriendDB.getFriends(currentUser.id); renderFriendCards(); }
+function renderFriendCards() {
+  var emptyEl = document.getElementById('empty-friends'), pagerEl = document.getElementById('avatar-pager');
+  if (friends.length === 0) { emptyEl.style.display = 'block'; pagerEl.style.display = 'none'; return; }
+  emptyEl.style.display = 'none'; pagerEl.style.display = 'block';
+  var html = '<div style="font-size:12px;color:#999;margin-bottom:8px">共 '+friends.length+' 位好友</div>';
+  friends.forEach(function(f) {
+    var fc = f.avatarFrame && f.avatarFrame !== 'default' ? ' frame-' + f.avatarFrame : '';
+    html += '<div class="friend-card" data-fid="'+f.id+'" onmousedown="startLongPress(event,\''+f.id+'\')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event,\''+f.id+'\')" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()" onclick="handleAvatarClick(event,\''+f.id+'\')">'
+      + '<div class="fc-avatar"><div class="fc-avt-img'+fc+'">'+renderAvatarHTML(f,'😶')+'</div></div>'
+      + '<div class="fc-info"><div class="fc-name">'+f.nickname+(HQ.WeeklyEngine.checkWeeklyQualify(f.id)?' <span class="avt-title-badge">🏅 最值得交往的朋友</span>':'')+'</div>'
+      + '<div class="fc-values">🔥 '+(f.anger||0)+'  <span style="margin-left:12px">💚 '+(f.tolerance||0)+'</span></div></div>'
+      + '<button class="fc-chat-btn" onclick="event.stopPropagation();goChat(\''+f.id+'\')">💬 私聊</button>'
+      + '</div>';
+  });
+  document.getElementById('avatar-grid').innerHTML = html;
+  document.getElementById('pager-dots').innerHTML = '';
+  document.getElementById('page-cur').textContent = '1';
+  document.getElementById('page-total').textContent = '1';
+  document.getElementById('pager-prev').disabled = true;
+  document.getElementById('pager-next').disabled = true;
 }
-function prevPage() { if (currentPage > 0) { currentPage--; renderPager(); } }
-function nextPage() { const tp = Math.ceil(friends.length / PER_PAGE); if (currentPage < tp - 1) { currentPage++; renderPager(); } }
+function prevPage() {}
+function nextPage() {}
 function startLongPress(e, fid) { activeFriendId = fid; cancelLongPress(); longPressTimer = setTimeout(() => { doLongPress(fid, e); activeFriendId = null; }, 600); }
 function cancelLongPress() { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }
 function handleAvatarClick(e, fid) { if (!activeFriendId || activeFriendId !== fid) return; cancelLongPress(); activeFriendId = null; doClick(fid, e); }
 function doClick(friendId, e) {
   HQ.ValueEngine.clickAvatar(currentUser.id, friendId).then(function(res) {
   if (!res.success) { showToast(res.error||'操作失败', 'error'); return; }
-  var el = document.querySelector('.avatar-cell[data-fid="'+friendId+'"] .avt-img');
+  var el = document.querySelector('.friend-card[data-fid="'+friendId+'"] .fc-avt-img');
   var rect = el ? el.getBoundingClientRect() : { left:150, top:300, width:64, height:64 };
   var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
   if (res.effectType === 'hit') {
@@ -223,7 +229,7 @@ function doClick(friendId, e) {
 function doLongPress(friendId, e) {
   HQ.ValueEngine.longPressAvatar(currentUser.id, friendId).then(function(res) {
   if (!res.success) { showToast(res.error||'操作失败','error'); return; }
-  var el = document.querySelector('.avatar-cell[data-fid="'+friendId+'"] .avt-img');
+  var el = document.querySelector('.friend-card[data-fid="'+friendId+'"] .fc-avt-img');
   var rect = el ? el.getBoundingClientRect() : { left:150,top:300,width:64,height:64 };
   var cx = rect.left+rect.width/2, cy = rect.top+rect.height/2;
   for (var i=0;i<5;i++) setTimeout(function(){spawnEffect('❤️',cx+(Math.random()-0.5)*60,cy+(Math.random()-0.5)*30,'love-effect');},i*120);
@@ -233,7 +239,7 @@ function doLongPress(friendId, e) {
 }
 function spawnEffect(emoji,x,y,cls) { const el=document.createElement('div'); el.className=cls; el.textContent=emoji; el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el); setTimeout(()=>el.remove(), cls==='hit-effect'?600:cls==='hit-particle'?550:900); }
 function bounceValue(id) { const el=document.getElementById(id); if(!el)return; el.classList.remove('num-bounce'); void el.offsetWidth; el.classList.add('num-bounce'); }
-function updateFriendDisplay(fid) { const old=friends; friends=HQ.FriendDB.getFriends(currentUser.id); const start=currentPage*PER_PAGE; const pageF=friends.slice(start,start+PER_PAGE); const changed=old.slice(start,start+PER_PAGE).some((f,i)=>pageF[i]&&(f.anger!==pageF[i].anger||f.tolerance!==pageF[i].tolerance)); if(changed||old.length!==friends.length)renderPager(); }
+function updateFriendDisplay(fid) { friends=HQ.FriendDB.getFriends(currentUser.id); renderFriendCards(); }
 function goChat(fid) { window.location.href='chat.html?friend='+fid; }
 function searchUser() {
   var kw=document.getElementById('search-input').value.trim(); var el=document.getElementById('search-result');
@@ -252,20 +258,9 @@ function refreshAndOpenRequests() { fetch(HQ.API+'/api/friends/requests/'+curren
 function openRequests() { var reqs=HQ.RequestDB.getPending(currentUser.id); document.getElementById('request-list').innerHTML=reqs.length?reqs.map(function(r){var fu=HQ.UserDB.findById(r.from);return'<div class="req-item"><span class="req-name">'+(fu?fu.nickname:'未知用户')+'</span><div class="req-actions"><button class="accept-btn" onclick="respondReq(\''+r.from+'\',\'accept\')">同意</button><button class="reject-btn" onclick="respondReq(\''+r.from+'\',\'reject\')">拒绝</button></div></div>';}).join(''):'<div style="text-align:center;padding:16px;color:#BBB">暂无申请（点刷新重试）</div>'; document.getElementById('request-modal').classList.add('show'); }
 function closeRequests() {
   document.getElementById('request-modal').classList.remove('show');
-  fetch(HQ.API+'/api/friends/'+currentUser.id).then(function(r){return r.json();}).then(function(res){
-    if(res.friends){
-      var allUsers = JSON.parse(localStorage.getItem('huoqi_users_cache')||'[]');
-      res.friends.forEach(function(f){
-        var idx = allUsers.findIndex(function(u){return u.id===f.id;});
-        if(idx>=0) allUsers[idx]=f; else allUsers.push(f);
-      });
-      localStorage.setItem('huoqi_users_cache', JSON.stringify(allUsers));
-      localStorage.setItem('huoqi_friends_cache_'+currentUser.id, JSON.stringify(res.friends.map(function(f){return f.id;})));
-    }
-    refreshMyValues();
-    loadFriends();
-    updateNoticeBadge();
-  });
+  refreshMyValues();
+  loadFriends();
+  updateNoticeBadge();
 }
 function respondReq(fromId,action) { HQ.RequestDB.respond(currentUser.id,fromId,action).then(function(res) { showToast(action==='accept'?'已添加好友 🎉':'已拒绝',action==='accept'?'success':'info'); openRequests(); }); }
 var avatarPresets = ['😊','😎','🐱','🐶','🦊','🐼','🐨','🦁','🐸','🦄','🌸','🔥','💎','🎮','🌈','🍀','🌙','⭐','🎵','💜'];

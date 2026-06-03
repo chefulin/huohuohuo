@@ -6,7 +6,7 @@
   'use strict';
 
   var API = (function() { var h = window.location.host; if (h && h !== '') return window.location.protocol + '//' + h; return 'http://localhost:5050'; })();
-  var ONLINE = true;
+  var ONLINE = false;
 
   function api(url, opts) {
     opts = opts || {};
@@ -164,32 +164,36 @@
   // ============================================================
   var FriendDB = {
     getFriends: function(uid) {
-      if (ONLINE) {
-        // 异步刷新，同步返回缓存
-        api('/api/friends/' + uid).then(function(r) {
-          if (r.friends) {
-            r.friends.forEach(function(f) { CACHE.addUser(f); });
-            LS.set('huoqi_friends_cache_' + uid, r.friends.map(function(f) { return f.id; }));
-          }
-        });
-        var fids = LS.get('huoqi_friends_cache_' + uid) || [];
-        return fids.map(function(id) { return UserDB.findById(id); }).filter(Boolean);
-      }
+      // 优先读 huoqi_friends（respond 写入的完整数据）
       var data = LS.get('huoqi_friends') || {};
+      // 也合并 cache 数据
+      var cacheIds = LS.get('huoqi_friends_cache_' + uid) || [];
       var fids = data[uid] || [];
+      // 合并去重
+      cacheIds.forEach(function(id) { if (fids.indexOf(id) < 0) fids.push(id); });
       return fids.map(function(id) { return UserDB.findById(id); }).filter(Boolean);
     },
 
     isFriend: function(a, b) {
-      var fids = LS.get('huoqi_friends_cache_' + a) || [];
-      return fids.indexOf(b) >= 0;
+      var data = LS.get('huoqi_friends') || {};
+      var fa = data[a] || [];
+      var fb = data[b] || [];
+      return fa.indexOf(b) >= 0 && fb.indexOf(a) >= 0;
     },
 
     addFriend: function(a, b) {
-      var fa = LS.get('huoqi_friends_cache_' + a) || [];
-      if (fa.indexOf(b) < 0) { fa.push(b); LS.set('huoqi_friends_cache_' + a, fa); }
-      var fb = LS.get('huoqi_friends_cache_' + b) || [];
-      if (fb.indexOf(a) < 0) { fb.push(a); LS.set('huoqi_friends_cache_' + b, fb); }
+      // 更新 huoqi_friends
+      var data = LS.get('huoqi_friends') || {};
+      if (!data[a]) data[a] = [];
+      if (!data[b]) data[b] = [];
+      if (data[a].indexOf(b) < 0) data[a].push(b);
+      if (data[b].indexOf(a) < 0) data[b].push(a);
+      LS.set('huoqi_friends', data);
+      // 同步更新 cache
+      var ca = LS.get('huoqi_friends_cache_' + a) || [];
+      if (ca.indexOf(b) < 0) { ca.push(b); LS.set('huoqi_friends_cache_' + a, ca); }
+      var cb = LS.get('huoqi_friends_cache_' + b) || [];
+      if (cb.indexOf(a) < 0) { cb.push(a); LS.set('huoqi_friends_cache_' + b, cb); }
     }
   };
 
@@ -220,18 +224,27 @@
     },
 
     respond: function(to, from, action) {
-      if (ONLINE) return api('/api/friends/respond', { method:'POST', body:{from:from,to:to,action:action} }).then(function(r) {
-        if (action === 'accept') FriendDB.addFriend(from, to);
-        LS.remove('huoqi_requests_cache_' + to);
-        return r;
-      });
       var data = LS.get('huoqi_friend_requests') || {};
       var list = data[to] || [];
       var req = list.find(function(r) { return r.from === from && r.status === 'pending'; });
       if (!req) return Promise.resolve({ success: false, error: '申请不存在' });
       req.status = action === 'accept' ? 'accepted' : 'rejected';
       LS.set('huoqi_friend_requests', data);
-      if (action === 'accept') FriendDB.addFriend(from, to);
+      if (action === 'accept') {
+        FriendDB.addFriend(from, to);
+        // 双向写入旧格式 huoqi_friends（兜底兼容）
+        var allFriends = LS.get('huoqi_friends') || {};
+        if (!allFriends[from]) allFriends[from] = [];
+        if (!allFriends[to]) allFriends[to] = [];
+        if (allFriends[from].indexOf(to) < 0) allFriends[from].push(to);
+        if (allFriends[to].indexOf(from) < 0) allFriends[to].push(from);
+        LS.set('huoqi_friends', allFriends);
+        // 确保双方用户数据在缓存中
+        var fu = UserDB.findById(from);
+        var tu = UserDB.findById(to);
+        if (fu) CACHE.addUser(fu);
+        if (tu) CACHE.addUser(tu);
+      }
       return Promise.resolve({ success: true });
     }
   };
@@ -373,10 +386,12 @@
   // ============================================================
   var RankAPI = {
     getRankings: function(type, uid) {
-      if (ONLINE) return api('/api/rankings?type=' + type + '&uid=' + (uid || '')).then(function(r) { return r.users || []; });
-      var friends = FriendDB.getFriends(uid);
-      var me = UserDB.findById(uid);
-      var all = [me].concat(friends).filter(Boolean);
+      var me = UserDB.findById(uid || CACHE.currentId());
+      var friends = FriendDB.getFriends(uid || CACHE.currentId());
+      var seen = {};
+      var all = [];
+      if (me) { seen[me.id] = true; all.push(me); }
+      friends.forEach(function(f) { if (!seen[f.id]) { seen[f.id] = true; all.push(f); } });
       all.sort(function(a,b) { return (b[type]||0) - (a[type]||0); });
       return Promise.resolve(all);
     },

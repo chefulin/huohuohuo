@@ -288,35 +288,37 @@ function closeRequests() {
 }
 function respondReq(fromId,action) {
   if (action === 'accept') {
-    // 1. 从请求列表中移除
-    var reqs = JSON.parse(localStorage.getItem('huoqi_friend_requests')||'{}');
-    var list = reqs[currentUser.id] || [];
-    reqs[currentUser.id] = list.filter(function(r) { return r.from !== fromId; });
-    localStorage.setItem('huoqi_friend_requests', JSON.stringify(reqs));
-    localStorage.removeItem('huoqi_requests_cache_'+currentUser.id);
-    // 2. 双向写入好友关系
-    var allFriends = JSON.parse(localStorage.getItem('huoqi_friends')||'{}');
-    if (!allFriends[currentUser.id]) allFriends[currentUser.id] = [];
-    if (!allFriends[fromId]) allFriends[fromId] = [];
-    if (allFriends[currentUser.id].indexOf(fromId) < 0) allFriends[currentUser.id].push(fromId);
-    if (allFriends[fromId].indexOf(currentUser.id) < 0) allFriends[fromId].push(currentUser.id);
-    localStorage.setItem('huoqi_friends', JSON.stringify(allFriends));
-    // 3. 确保对方用户信息在 users 缓存中
-    var fu = HQ.UserDB.findById(fromId);
-    if (fu) {
-      var users = JSON.parse(localStorage.getItem('huoqi_users')||'[]');
-      var idx = users.findIndex(function(u){return u.id===fu.id;});
-      if (idx >= 0) users[idx] = fu; else users.push(fu);
-      localStorage.setItem('huoqi_users', JSON.stringify(users));
-    }
-    // 4. 同步调后端API
-    HQ.RequestDB.respond(currentUser.id, fromId, 'accept');
-    // 5. 关闭弹窗，渲染好友
-    document.getElementById('request-modal').classList.remove('show');
-    showToast('已添加好友 🎉','success');
-    localStorage.setItem('huoqi_requests_cache_'+currentUser.id, '[]');
-    updateNoticeBadge();
-    loadFriends();
+    // 1. 先从API拿到对方的完整用户数据
+    fetch(HQ.API+'/api/user/'+fromId).then(function(r){return r.json();}).then(function(ures) {
+      var fu = ures.user;
+      // 2. 存到本地
+      if (fu) {
+        var users = JSON.parse(localStorage.getItem('huoqi_users')||'[]');
+        var idx = users.findIndex(function(u){return u.id===fu.id;});
+        if (idx >= 0) users[idx] = fu; else users.push(fu);
+        localStorage.setItem('huoqi_users', JSON.stringify(users));
+        localStorage.setItem('huoqi_users_cache', JSON.stringify(users));
+      }
+      // 3. 双向好友关系
+      var allFriends = JSON.parse(localStorage.getItem('huoqi_friends')||'{}');
+      if (!allFriends[currentUser.id]) allFriends[currentUser.id] = [];
+      if (!allFriends[fromId]) allFriends[fromId] = [];
+      if (allFriends[currentUser.id].indexOf(fromId) < 0) allFriends[currentUser.id].push(fromId);
+      if (allFriends[fromId].indexOf(currentUser.id) < 0) allFriends[fromId].push(currentUser.id);
+      localStorage.setItem('huoqi_friends', JSON.stringify(allFriends));
+      // 4. 清申请
+      localStorage.removeItem('huoqi_requests_cache_'+currentUser.id);
+      localStorage.removeItem('huoqi_friend_requests');
+      // 5. 调后端
+      HQ.RequestDB.respond(currentUser.id, fromId, 'accept');
+      // 6. 渲染
+      document.getElementById('request-modal').classList.remove('show');
+      showToast('已添加好友 🎉','success');
+      updateNoticeBadge();
+      loadFriends();
+    }).catch(function() {
+      showToast('网络错误，请重试','error');
+    });
   } else {
     HQ.RequestDB.respond(currentUser.id, fromId, action).then(function(res) {
       showToast('已拒绝','info');

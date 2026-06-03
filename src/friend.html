@@ -114,6 +114,7 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
         <div class="uid" id="my-id">---</div>
       </div>
     </div>
+    <button onclick="logout()" style="background:none;border:1px solid #ccc;border-radius:12px;padding:4px 10px;font-size:11px;color:#999;cursor:pointer;margin-right:8px">退出</button>
     <div class="values">
       <div class="val-item"><div class="val-num anger" id="my-anger">0</div><div class="val-label">火气值</div></div>
       <div class="val-item"><div class="val-num tolerance" id="my-tolerance">0</div><div class="val-label">包容值</div></div>
@@ -159,6 +160,7 @@ const currentUser = HQ.UserDB.current();
 if (!currentUser) { window.location.href = 'login.html'; }
 const PER_PAGE = 4;
 let currentPage = 0, friends = [], longPressTimer = null, activeFriendId = null;
+function logout() { if(confirm('确定要退出登录吗？')){ localStorage.clear(); window.location.href='login.html'; } }
 function init() {
   document.getElementById('my-nickname').textContent = currentUser.nickname;
   document.getElementById('my-id').textContent = 'ID: ' + currentUser.id;

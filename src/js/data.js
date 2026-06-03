@@ -6,7 +6,7 @@
   'use strict';
 
   var API = (function() { var h = window.location.host; if (h && h !== '') return window.location.protocol + '//' + h; return 'http://localhost:5050'; })();
-  var ONLINE = false;
+  var ONLINE = true;
 
   function api(url, opts) {
     opts = opts || {};

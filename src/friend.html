@@ -259,8 +259,27 @@ function openRequests() { var reqs=HQ.RequestDB.getPending(currentUser.id); docu
 function closeRequests() {
   document.getElementById('request-modal').classList.remove('show');
   refreshMyValues();
-  loadFriends();
-  updateNoticeBadge();
+  // 强制从API拉取最新好友数据
+  fetch(HQ.API+'/api/friends/'+currentUser.id).then(function(r){return r.json();}).then(function(res){
+    if(res.friends){
+      res.friends.forEach(function(f){
+        var key = 'huoqi_users';
+        var users = JSON.parse(localStorage.getItem(key)||'[]');
+        var idx = users.findIndex(function(u){return u.id===f.id;});
+        if(idx>=0) users[idx]=f; else users.push(f);
+        localStorage.setItem(key, JSON.stringify(users));
+      });
+      localStorage.setItem('huoqi_friends_cache_'+currentUser.id, JSON.stringify(res.friends.map(function(f){return f.id;})));
+      var allF = JSON.parse(localStorage.getItem('huoqi_friends')||'{}');
+      allF[currentUser.id] = res.friends.map(function(f){return f.id;});
+      localStorage.setItem('huoqi_friends', JSON.stringify(allF));
+    }
+    loadFriends();
+    updateNoticeBadge();
+  }).catch(function(){
+    loadFriends();
+    updateNoticeBadge();
+  });
 }
 function respondReq(fromId,action) { HQ.RequestDB.respond(currentUser.id,fromId,action).then(function(res) { showToast(action==='accept'?'已添加好友 🎉':'已拒绝',action==='accept'?'success':'info'); openRequests(); }); }
 var avatarPresets = ['😊','😎','🐱','🐶','🦊','🐼','🐨','🦁','🐸','🦄','🌸','🔥','💎','🎮','🌈','🍀','🌙','⭐','🎵','💜'];

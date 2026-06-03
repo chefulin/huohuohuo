@@ -8,10 +8,13 @@ from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, g, send_from_directory
 from flask_cors import CORS
 
-app = Flask(__name__, static_folder='src', static_url_path='/static')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SRC_DIR = os.path.join(BASE_DIR, 'src')
+
+app = Flask(__name__, static_folder=SRC_DIR, static_url_path='/static')
 CORS(app)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'huoqi.db')
+DB_PATH = os.path.join(BASE_DIR, 'huoqi.db')
 
 # ============================================================
 # 数据库
@@ -343,12 +346,12 @@ def admin_users():
 # ============================================================
 @app.route('/')
 def index():
-    return send_from_directory('src', 'login.html')
+    return send_from_directory(SRC_DIR, 'login.html')
 
 @app.route('/<path:path>')
 def static_files(path):
-    if path.startswith('api/'): return jsonify({'success':False,'error':'Unknown API'}),404
-    return send_from_directory('src', path)
+    if path.startswith('api/'): return jsonify({'success':False,'error':'Unknown'}),404
+    return send_from_directory(SRC_DIR, path)
 
 # ============================================================
 # 启动

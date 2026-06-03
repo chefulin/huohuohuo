@@ -250,7 +250,7 @@ function doLongPress(friendId, e) {
 }
 function spawnEffect(emoji,x,y,cls) { const el=document.createElement('div'); el.className=cls; el.textContent=emoji; el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el); setTimeout(()=>el.remove(), cls==='hit-effect'?600:cls==='hit-particle'?550:900); }
 function bounceValue(id) { const el=document.getElementById(id); if(!el)return; el.classList.remove('num-bounce'); void el.offsetWidth; el.classList.add('num-bounce'); }
-function updateFriendDisplay(fid) { friends=HQ.FriendDB.getFriends(currentUser.id); renderFriendCards(); }
+function updateFriendDisplay(fid) { loadFriends(); }
 function goChat(fid) { window.location.href='chat.html?friend='+fid; }
 function searchUser() {
   var kw=document.getElementById('search-input').value.trim(); var el=document.getElementById('search-result');

@@ -281,7 +281,7 @@ function closeRequests() {
     updateNoticeBadge();
   });
 }
-function respondReq(fromId,action) { HQ.RequestDB.respond(currentUser.id,fromId,action).then(function(res) { showToast(action==='accept'?'已添加好友 🎉':'已拒绝',action==='accept'?'success':'info'); localStorage.removeItem('huoqi_requests_cache_'+currentUser.id); updateNoticeBadge(); openRequests(); }); }
+function respondReq(fromId,action) { HQ.RequestDB.respond(currentUser.id,fromId,action).then(function(res) { showToast(action==='accept'?'已添加好友 🎉':'已拒绝',action==='accept'?'success':'info'); localStorage.removeItem('huoqi_requests_cache_'+currentUser.id); updateNoticeBadge(); if(action==='accept'){ closeRequests(); loadFriends(); } else { openRequests(); } }); }
 var avatarPresets = ['😊','😎','🐱','🐶','🦊','🐼','🐨','🦁','🐸','🦄','🌸','🔥','💎','🎮','🌈','🍀','🌙','⭐','🎵','💜'];
 function openAvatarPicker() {
   var u = HQ.UserDB.findById(currentUser.id) || currentUser;

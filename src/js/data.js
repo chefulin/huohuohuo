@@ -213,13 +213,13 @@
     },
 
     getPending: function(uid) {
+      var cached = LS.get('huoqi_requests_cache_' + uid) || [];
+      // 异步刷新缓存
       if (ONLINE) {
-        // 异步从后端拉取，同时更新缓存
         api('/api/friends/requests/' + uid).then(function(r) {
-          if (r.requests) LS.set('huoqi_requests_cache_' + uid, r.requests);
+          if (r && r.requests) { LS.set('huoqi_requests_cache_' + uid, r.requests); }
         });
       }
-      var cached = LS.get('huoqi_requests_cache_' + uid) || [];
       return cached;
     },
 

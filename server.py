@@ -136,8 +136,8 @@ def search_user():
     db = get_db()
     # 支持精确匹配和模糊匹配
     users = rows_to_list(db.execute(
-        "SELECT id,phone,nickname,avatar,avatarFrame,anger,tolerance FROM users WHERE phone=? OR id=? OR phone LIKE ? OR id LIKE ?",
-        (kw, kw, '%'+kw+'%', '%'+kw+'%')).fetchall())
+        "SELECT id,phone,nickname,avatar,avatarFrame,anger,tolerance FROM users WHERE phone=? OR id=? OR phone LIKE ? OR id LIKE ? OR nickname LIKE ?",
+        (kw, kw, '%'+kw+'%', '%'+kw+'%', '%'+kw+'%')).fetchall())
     return jsonify({'success':True,'users':users})
 
 # ============================================================

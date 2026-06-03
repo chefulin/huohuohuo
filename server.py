@@ -382,11 +382,11 @@ def index():
 
 @app.route('/<path:path>')
 def static_files(path):
-    if path.startswith('api/'): return jsonify({'success':False,'error':'Unknown'}),404
-    try:
-        return send_from_directory(SRC_DIR, path)
-    except:
-        return jsonify({'error':'File not found','path':path,'static_dir':SRC_DIR}),404
+    if path.startswith('api/'): return jsonify({'success':False,'error':'Unknown API'}),404
+    if '.' in path or path.endswith('/'):
+        try: return send_from_directory(SRC_DIR, path)
+        except: pass
+    return jsonify({'error':'Not found'}),404
 
 # ============================================================
 # 启动

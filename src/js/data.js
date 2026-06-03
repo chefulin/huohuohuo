@@ -205,6 +205,12 @@
     },
 
     getPending: function(uid) {
+      if (ONLINE) {
+        // 异步从后端拉取，同时更新缓存
+        api('/api/friends/requests/' + uid).then(function(r) {
+          if (r.requests) LS.set('huoqi_requests_cache_' + uid, r.requests);
+        });
+      }
       var cached = LS.get('huoqi_requests_cache_' + uid) || [];
       return cached;
     },

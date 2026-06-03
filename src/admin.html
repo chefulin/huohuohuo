@@ -63,6 +63,7 @@ tr:hover td { background: #FFFDE7; }
           <button onclick="loadUsers()">搜索</button>
         </div>
         <button class="refresh-btn" onclick="loadAll()">🔄 刷新</button>
+      <button class="refresh-btn" onclick="resetAll()" style="background:#FFEBEE;color:#C62828;border-color:#FFCDD2">⚠ 清空全部数据</button>
       </div>
     </div>
     <div id="user-table">
@@ -132,6 +133,7 @@ function loadUsers() {
     });
 }
 
+function resetAll() { if(!confirm('确定清空所有用户数据？此操作不可恢复！'))return; fetch(API+'/api/admin/reset',{method:'POST'}).then(function(r){return r.json();}).then(function(res){ alert(res.msg||'已清空'); loadAll(); }); }
 // 每30秒自动刷新
 loadAll();
 setInterval(loadAll, 30000);

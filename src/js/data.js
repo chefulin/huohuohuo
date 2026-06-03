@@ -5,7 +5,7 @@
 (function(window) {
   'use strict';
 
-  var API = 'http://localhost:5050';
+  var API = 'https://huohuohuohuo.onrender.com';
   var ONLINE = false;
 
   function api(url, opts) {

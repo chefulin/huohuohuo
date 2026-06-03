@@ -324,6 +324,19 @@ def shop_purchase():
     return jsonify({'success':True})
 
 # ============================================================
+# 账号清理 API
+# ============================================================
+@app.route('/api/admin/reset', methods=['POST'])
+def reset_db():
+    db = get_db()
+    db.execute("DELETE FROM messages")
+    db.execute("DELETE FROM friend_requests")
+    db.execute("DELETE FROM friends")
+    db.execute("DELETE FROM users")
+    db.commit()
+    return jsonify({'success':True,'msg':'所有数据已清空'})
+
+# ============================================================
 # 后台管理 API
 # ============================================================
 @app.route('/api/admin/stats', methods=['GET'])

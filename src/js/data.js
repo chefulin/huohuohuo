@@ -241,10 +241,12 @@
         if (allFriends[to].indexOf(from) < 0) allFriends[to].push(from);
         LS.set('huoqi_friends', allFriends);
       }
+      // 清除本地申请缓存
+      LS.remove('huoqi_requests_cache_' + to);
       // 调后端API（关键）
       if (ONLINE) {
         return api('/api/friends/respond', { method:'POST', body:{from:from, to:to, action:action} })
-        .then(function(r) { return r; })
+        .then(function(r) { LS.remove('huoqi_requests_cache_' + to); return r; })
         .catch(function() { return { success: true }; });
       }
       return Promise.resolve({ success: true });

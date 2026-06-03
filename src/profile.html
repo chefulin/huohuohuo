@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>个人主页 — 我现在火气很大</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #FFF8D6; min-height: 100vh; }
+.page { width: 100%; max-width: 414px; margin: 0 auto; padding-bottom: 70px; }
+.top-bar { background: #FFE899; padding: 14px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 10; }
+.top-bar .back-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.7); font-size: 18px; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; }
+.top-bar .back-btn:active { background: #FFF; }
+.top-bar .title { font-size: 17px; font-weight: 700; color: #555; }
+.card { background: #FFF; border-radius: 18px; padding: 20px; margin: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+.avatar-section { text-align: center; margin-bottom: 12px; }
+.avatar-preview { width: 80px; height: 80px; border-radius: 50%; background: #F5F5F5; display: inline-flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer; position: relative; border: 3px solid #FFE899; }
+.avatar-preview .edit-badge { position: absolute; bottom: 0; right: 0; background: #B8D8FF; width: 26px; height: 26px; border-radius: 50%; font-size: 13px; display: flex; align-items: center; justify-content: center; color: #555; }
+.nickname-row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+.nickname-row input { flex: 1; height: 44px; border: 1.5px solid #EEE; border-radius: 10px; padding: 0 12px; font-size: 14px; background: #FAFAFA; outline: none; }
+.nickname-row input:focus { border-color: #B8D8FF; }
+.nickname-row button { padding: 0 18px; height: 44px; border: none; border-radius: 10px; background: #B8D8FF; font-size: 13px; font-weight: 700; color: #555; cursor: pointer; white-space: nowrap; }
+.nickname-row button:active { background: #A0C8F8; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: #666; margin-bottom: 6px; }
+.form-group input { width: 100%; height: 44px; border: 1.5px solid #EEE; border-radius: 10px; padding: 0 12px; font-size: 14px; background: #FAFAFA; outline: none; }
+.form-group input:focus { border-color: #B8D8FF; }
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+.btn { flex: 1; height: 46px; border-radius: 23px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; }
+.btn-primary { background: #B8D8FF; color: #555; }
+.btn-primary:active { background: #A0C8F8; }
+.btn-danger { background: #FFF; color: #FF6B6B; border: 1.5px solid #FFCDD2; }
+.btn-danger:active { background: #FFF5F5; }
+.info-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-bottom: 1px solid #F5F5F5; }
+.info-row .info-label { color: #999; }
+.info-row .info-value { color: #555; font-weight: 600; }
+.avatar-picker-popup { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0; }
+.avatar-picker-popup .opt { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; border: 2px solid transparent; background: #F5F5F5; transition: all 0.15s; }
+.avatar-picker-popup .opt:active { transform: scale(0.9); }
+.avatar-picker-popup .opt.sel { border-color: #B8D8FF; background: #E3F2FD; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: #FFF; display: flex; border-top: 1px solid #EEE; max-width: 414px; margin: 0 auto; padding-bottom: env(safe-area-inset-bottom); }
+.bottom-nav .nav-item { flex: 1; text-align: center; padding: 8px 0 6px; cursor: pointer; color: #BBB; transition: all 0.15s; text-decoration: none; font-size: 10px; }
+.bottom-nav .nav-item .nav-icon { font-size: 22px; display: block; margin-bottom: 1px; }
+.bottom-nav .nav-item:active { background: #FAFAFA; }
+.bottom-nav .nav-item.active { color: #B8D8FF; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 20px; font-size: 13px; font-weight: 600; z-index: 999; animation: slideDown 0.3s ease; }
+.toast.success { background: #81C784; color: #FFF; }
+.toast.error { background: #FF6B6B; color: #FFF; }
+.toast.info { background: #B8D8FF; color: #555; }
+@keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top-bar"><button class="back-btn" onclick="history.back()">←</button><span class="title">个人主页</span></div>
+
+  <div class="card">
+    <div class="avatar-section">
+      <div class="avatar-preview" id="avatar-preview" onclick="toggleAvatarPicker()">😊<span class="edit-badge">✎</span></div>
+      <div class="avatar-picker-popup" id="avatar-picker" style="display:none"></div>
+      <div style="margin-top:4px;font-size:11px;color:#999">自定义emoji或图片URL：</div>
+      <input type="text" id="custom-avatar" placeholder="😎 或 https://..." style="width:80%;height:34px;border:1.5px solid #EEE;border-radius:8px;padding:0 10px;font-size:13px;text-align:center;margin-top:4px" onchange="applyCustomAvatar()" />
+    </div>
+
+    <div class="nickname-row">
+      <input type="text" id="nickname-input" maxlength="12" placeholder="输入新昵称" />
+      <button onclick="saveNickname()">保存</button>
+    </div>
+
+    <div class="info-row"><span class="info-label">用户ID</span><span class="info-value" id="info-id"></span></div>
+    <div class="info-row"><span class="info-label">手机号</span><span class="info-value" id="info-phone"></span></div>
+    <div class="info-row"><span class="info-label">注册日期</span><span class="info-value" id="info-date"></span></div>
+    <div class="info-row"><span class="info-label">🔥 火气值</span><span class="info-value" id="info-anger"></span></div>
+    <div class="info-row"><span class="info-label">💚 包容值</span><span class="info-value" id="info-tolerance"></span></div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:15px;color:#555;margin-bottom:12px">🔒 修改密码</h3>
+    <div class="form-group"><label>旧密码</label><input type="password" id="old-pwd" placeholder="输入旧密码" /></div>
+    <div class="form-group"><label>新密码</label><input type="password" id="new-pwd" placeholder="6-16位新密码" /></div>
+    <div class="form-group"><label>确认新密码</label><input type="password" id="confirm-pwd" placeholder="再次输入新密码" /></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="changePassword()">修改密码</button>
+    </div>
+  </div>
+
+  <div style="padding:0 16px">
+    <button class="btn btn-danger" onclick="logout()" style="width:100%">退出登录</button>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item" onclick="location.href='friend.html'"><span class="nav-icon">🏠</span>好友</div>
+  <div class="nav-item" onclick="location.href='rank.html'"><span class="nav-icon">🏆</span>排行</div>
+  <div class="nav-item" onclick="location.href='recommend.html'"><span class="nav-icon">🌟</span>推荐</div>
+  <div class="nav-item" onclick="location.href='shop.html'"><span class="nav-icon">🛍️</span>商城</div>
+  <div class="nav-item active" onclick="location.href='profile.html'"><span class="nav-icon">👤</span>主页</div>
+</div>
+
+<script src="js/data.js"></script>
+<script>
+var currentUser = HQ.UserDB.current();
+if (!currentUser) { window.location.href = 'login.html'; }
+
+var avatarPresets = ['😊','😎','🐱','🐶','🦊','🐼','🐨','🦁','🐸','🦄','🌸','🔥','💎','🎮','🌈','🍀','🌙','⭐','🎵','💜'];
+
+function init() {
+  var u = HQ.UserDB.findById(currentUser.id) || currentUser;
+  document.getElementById('avatar-preview').textContent = u.avatar || '😊';
+  document.getElementById('nickname-input').value = u.nickname || '';
+  document.getElementById('info-id').textContent = u.id;
+  document.getElementById('info-phone').textContent = (u.phone||'').replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+  document.getElementById('info-date').textContent = u.registerDate || '-';
+  document.getElementById('info-anger').textContent = (u.anger||0) + (u.anger>=999?' 🔥超标':'');
+  document.getElementById('info-tolerance').textContent = (u.tolerance||0) + (u.tolerance>=999?' ✅达标':'');
+  buildAvatarPicker();
+}
+
+function toggleAvatarPicker() {
+  var el = document.getElementById('avatar-picker');
+  el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+}
+
+function buildAvatarPicker() {
+  var u = HQ.UserDB.findById(currentUser.id) || currentUser;
+  var html = '';
+  avatarPresets.forEach(function(emoji) {
+    html += '<div class="opt' + (u.avatar === emoji ? ' sel' : '') + '" onclick="changeAvatar(\'' + emoji + '\')">' + emoji + '</div>';
+  });
+  document.getElementById('avatar-picker').innerHTML = html;
+}
+
+function changeAvatar(emoji) {
+  HQ.UserDB.update(currentUser.id, { avatar: emoji });
+  currentUser.avatar = emoji;
+  document.getElementById('avatar-preview').textContent = emoji;
+  buildAvatarPicker();
+  document.getElementById('avatar-picker').style.display = 'none';
+  showToast('头像已更新', 'success');
+}
+
+function applyCustomAvatar() {
+  var val = document.getElementById('custom-avatar').value.trim();
+  if (!val) return;
+  HQ.UserDB.update(currentUser.id, { avatar: val });
+  currentUser.avatar = val;
+  document.getElementById('avatar-preview').textContent = val.startsWith('http') ? '' : val;
+  if (val.startsWith('http')) {
+    var img = document.createElement('img');
+    img.src = val; img.style.width='100%'; img.style.height='100%'; img.style.borderRadius='50%'; img.style.objectFit='cover';
+    var prev = document.getElementById('avatar-preview');
+    prev.textContent = ''; prev.appendChild(img);
+  } else {
+    document.getElementById('avatar-preview').textContent = val;
+  }
+  showToast('头像已更新', 'success');
+}
+
+function saveNickname() {
+  var name = document.getElementById('nickname-input').value.trim();
+  if (!name) { showToast('昵称不能为空', 'error'); return; }
+  HQ.UserDB.update(currentUser.id, { nickname: name });
+  currentUser.nickname = name;
+  showToast('昵称已保存', 'success');
+}
+
+function changePassword() {
+  var old = document.getElementById('old-pwd').value;
+  var neu = document.getElementById('new-pwd').value;
+  var confirm = document.getElementById('confirm-pwd').value;
+  if (!old || !neu) { showToast('请填写完整', 'error'); return; }
+  if (neu.length < 6 || neu.length > 16) { showToast('新密码6-16位', 'error'); return; }
+  if (neu !== confirm) { showToast('两次密码不一致', 'error'); return; }
+  var u = HQ.UserDB.findById(currentUser.id) || currentUser;
+  if (old !== u.password) { showToast('旧密码错误', 'error'); return; }
+  HQ.UserDB.update(currentUser.id, { password: neu });
+  currentUser.password = neu;
+  document.getElementById('old-pwd').value = '';
+  document.getElementById('new-pwd').value = '';
+  document.getElementById('confirm-pwd').value = '';
+  showToast('密码修改成功', 'success');
+}
+
+function logout() {
+  if (confirm('确定退出登录？')) {
+    localStorage.removeItem('huoqi_current_user');
+    window.location.href = 'login.html';
+  }
+}
+
+function showToast(msg, type) {
+  var t = document.createElement('div');
+  t.className = 'toast ' + (type || 'info');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 2000);
+}
+
+init();
+</script>
+</body>
+</html>

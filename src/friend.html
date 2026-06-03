@@ -200,31 +200,33 @@ function startLongPress(e, fid) { activeFriendId = fid; cancelLongPress(); longP
 function cancelLongPress() { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }
 function handleAvatarClick(e, fid) { if (!activeFriendId || activeFriendId !== fid) return; cancelLongPress(); activeFriendId = null; doClick(fid, e); }
 function doClick(friendId, e) {
-  const res = HQ.ValueEngine.clickAvatar(currentUser.id, friendId);
-  if (!res.success) { showToast(res.error, 'error'); return; }
-  const el = document.querySelector('.avatar-cell[data-fid="'+friendId+'"] .avt-img');
-  const rect = el ? el.getBoundingClientRect() : { left:150, top:300, width:64, height:64 };
-  const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  HQ.ValueEngine.clickAvatar(currentUser.id, friendId).then(function(res) {
+  if (!res.success) { showToast(res.error||'操作失败', 'error'); return; }
+  var el = document.querySelector('.avatar-cell[data-fid="'+friendId+'"] .avt-img');
+  var rect = el ? el.getBoundingClientRect() : { left:150, top:300, width:64, height:64 };
+  var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
   if (res.effectType === 'hit') {
-    for (let i = 0; i < 5; i++) setTimeout(() => spawnEffect('💥', cx+(Math.random()-0.5)*80, cy+(Math.random()-0.5)*80, 'hit-effect'), i*60);
-    ['💢','🔥','⚡','💨','‼️'].forEach((p,i) => setTimeout(() => { const pel=document.createElement('div'); pel.className='hit-particle'; pel.textContent=p; pel.style.left=cx+'px'; pel.style.top=cy+'px'; pel.style.setProperty('--dx',(Math.random()-0.5)*140+'px'); pel.style.setProperty('--dy',(Math.random()-0.5)*140+'px'); document.body.appendChild(pel); setTimeout(()=>pel.remove(),600); }, i*40));
-    document.body.classList.add('screen-shake'); setTimeout(()=>document.body.classList.remove('screen-shake'),350);
+    for (var i = 0; i < 5; i++) setTimeout(function(){ spawnEffect('💥', cx+(Math.random()-0.5)*80, cy+(Math.random()-0.5)*80, 'hit-effect'); }, i*60);
+    ['💢','🔥','⚡','💨','‼️'].forEach(function(p,i){ setTimeout(function(){ var pel=document.createElement('div'); pel.className='hit-particle'; pel.textContent=p; pel.style.left=cx+'px'; pel.style.top=cy+'px'; pel.style.setProperty('--dx',(Math.random()-0.5)*140+'px'); pel.style.setProperty('--dy',(Math.random()-0.5)*140+'px'); document.body.appendChild(pel); setTimeout(function(){pel.remove();},600); }, i*40); });
+    document.body.classList.add('screen-shake'); setTimeout(function(){document.body.classList.remove('screen-shake');},350);
     showToast('你的包容值 +1（匿名操作）', 'success');
   } else {
-    for (let i=0;i<5;i++) setTimeout(()=>spawnEffect('❤️',cx+(Math.random()-0.5)*50,cy+(Math.random()-0.5)*50,'love-effect'),i*80);
+    for (var i=0;i<5;i++) setTimeout(function(){spawnEffect('❤️',cx+(Math.random()-0.5)*50,cy+(Math.random()-0.5)*50,'love-effect');},i*80);
     showToast('火气≥999，强制安抚模式（匿名操作）', 'info');
   }
   bounceValue('my-tolerance'); refreshMyValues(); updateFriendDisplay(friendId);
+  });
 }
 function doLongPress(friendId, e) {
-  const res = HQ.ValueEngine.longPressAvatar(currentUser.id, friendId);
-  if (!res.success) { showToast(res.error,'error'); return; }
-  const el = document.querySelector('.avatar-cell[data-fid="'+friendId+'"] .avt-img');
-  const rect = el ? el.getBoundingClientRect() : { left:150,top:300,width:64,height:64 };
-  const cx = rect.left+rect.width/2, cy = rect.top+rect.height/2;
-  for (let i=0;i<5;i++) setTimeout(()=>spawnEffect('❤️',cx+(Math.random()-0.5)*60,cy+(Math.random()-0.5)*30,'love-effect'),i*120);
+  HQ.ValueEngine.longPressAvatar(currentUser.id, friendId).then(function(res) {
+  if (!res.success) { showToast(res.error||'操作失败','error'); return; }
+  var el = document.querySelector('.avatar-cell[data-fid="'+friendId+'"] .avt-img');
+  var rect = el ? el.getBoundingClientRect() : { left:150,top:300,width:64,height:64 };
+  var cx = rect.left+rect.width/2, cy = rect.top+rect.height/2;
+  for (var i=0;i<5;i++) setTimeout(function(){spawnEffect('❤️',cx+(Math.random()-0.5)*60,cy+(Math.random()-0.5)*30,'love-effect');},i*120);
   showToast('安抚成功！你的包容值 +1，好友火气 -1 ❤️','success');
   bounceValue('my-tolerance'); refreshMyValues(); updateFriendDisplay(friendId);
+  });
 }
 function spawnEffect(emoji,x,y,cls) { const el=document.createElement('div'); el.className=cls; el.textContent=emoji; el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el); setTimeout(()=>el.remove(), cls==='hit-effect'?600:cls==='hit-particle'?550:900); }
 function bounceValue(id) { const el=document.getElementById(id); if(!el)return; el.classList.remove('num-bounce'); void el.offsetWidth; el.classList.add('num-bounce'); }

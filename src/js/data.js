@@ -5,8 +5,8 @@
 (function(window) {
   'use strict';
 
-  var API = 'https://huohuohuohuo.onrender.com';
-  var ONLINE = false;
+  var API = (function() { var h = window.location.host; if (h && h !== '') return window.location.protocol + '//' + h; return 'http://localhost:5050'; })();
+  var ONLINE = true;
 
   function api(url, opts) {
     opts = opts || {};
@@ -67,6 +67,7 @@
         nickname: nickname || undefined, avatar: avatar || '😊'
       }}).then(function(res) {
         if (!res.success) return res;
+        ONLINE = true;
         CACHE.addUser(res.user);
         CACHE.setCurrentId(res.user.id);
         return res;
@@ -93,12 +94,13 @@
     },
 
     login: function(phone, password) {
+      var self = this;
       return api('/api/login', { method: 'POST', body: { phone: phone, password: password } })
       .then(function(res) {
         if (!res.success) return res;
+        ONLINE = true;  // 登录成功即确认后端在线
         CACHE.addUser(res.user);
         CACHE.setCurrentId(res.user.id);
-        // 同步拉取好友等缓存
         return syncAll(res.user.id).then(function() { return res; });
       }).catch(function() {
         var users = LS.get('huoqi_users') || [];

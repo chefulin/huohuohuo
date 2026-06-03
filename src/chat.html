@@ -63,31 +63,31 @@ let lastMsgCount = 0;
 function init() {
   document.getElementById('friend-name').textContent = friend.nickname;
   if (!isFriend) { document.getElementById('not-friend-bar').style.display = 'block'; document.getElementById('chat-input-area').style.display = 'none'; }
-  renderMessages();
-  lastMsgCount = HQ.ChatDB.getMessages(currentUser.id, friendId).length;
+  HQ.ChatDB.getMessages(currentUser.id, friendId).then(function(msgs) { lastMsgCount = msgs.length; renderMessages(); });
   setInterval(checkNewMessages, 1500);
   document.getElementById('msg-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') sendMessage(); });
 }
 function renderMessages() {
-  const msgs = HQ.ChatDB.getMessages(currentUser.id, friendId);
-  const container = document.getElementById('chat-messages');
-  const emptyEl = document.getElementById('empty-chat');
-  if (msgs.length === 0) { emptyEl.style.display = 'flex'; return; }
+  HQ.ChatDB.getMessages(currentUser.id, friendId).then(function(msgs) {
+  var container = document.getElementById('chat-messages');
+  var emptyEl = document.getElementById('empty-chat');
+  if (!msgs || msgs.length === 0) { emptyEl.style.display = 'flex'; return; }
   emptyEl.style.display = 'none';
-  let html = '', lastDate = '';
+  var html = '', lastDate = '';
   msgs.forEach(function(msg) {
-    const d = new Date(msg.timestamp);
-    const dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    const timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    var d = new Date(msg.timestamp);
+    var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
     if (dateStr !== lastDate) { html += '<div class="date-divider"><span>'+dateStr+'</span></div>'; lastDate = dateStr; }
-    const isMine = msg.from === currentUser.id;
+    var isMine = msg.from === currentUser.id;
     html += '<div class="msg-row '+(isMine?'mine':'other')+'"><div><div class="msg-bubble">'+escapeHtml(msg.text)+'</div><div class="msg-time">'+timeStr+'</div></div></div>';
   });
   container.innerHTML = html + '<div id="empty-chat" class="empty-chat" style="display:none"><div class="empty-icon">💬</div><div class="empty-text">还没聊过天</div></div>';
   container.scrollTop = container.scrollHeight;
+  });
 }
-function checkNewMessages() { const msgs = HQ.ChatDB.getMessages(currentUser.id, friendId); if (msgs.length !== lastMsgCount) { lastMsgCount = msgs.length; renderMessages(); } }
-function sendMessage() { if (!isFriend) return; const input = document.getElementById('msg-input'); const text = input.value.trim(); if (!text) return; const res = HQ.ChatDB.send(currentUser.id, friendId, text); if (res.success) { input.value = ''; lastMsgCount = HQ.ChatDB.getMessages(currentUser.id, friendId).length; renderMessages(); input.focus(); } }
+function checkNewMessages() { HQ.ChatDB.getMessages(currentUser.id, friendId).then(function(msgs) { if (msgs.length !== lastMsgCount) { lastMsgCount = msgs.length; renderMessages(); } }); }
+function sendMessage() { if (!isFriend) return; var input = document.getElementById('msg-input'); var text = input.value.trim(); if (!text) return; HQ.ChatDB.send(currentUser.id, friendId, text).then(function(res) { if (res.success) { input.value = ''; HQ.ChatDB.getMessages(currentUser.id, friendId).then(function(msgs) { lastMsgCount = msgs.length; renderMessages(); }); input.focus(); } }); }
 function escapeHtml(str) { var div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
 init();
 </script>

@@ -130,10 +130,13 @@ document.getElementById('auth-form').addEventListener('submit', function(e) {
   const nickname = document.getElementById('nickname').value.trim();
   if (mode === 'register') {
     var avatar = document.getElementById('avatar-custom').value.trim() || selectedAvatar;
-    const res = HQ.UserDB.register(phone, password, nickname || undefined, avatar);
-    if (res.success) { showToast('注册成功！', 'success'); setTimeout(() => { window.location.href = 'friend.html'; }, 800); } else { showToast(res.error, 'error'); }
+    HQ.UserDB.register(phone, password, nickname || undefined, avatar).then(function(res) {
+      if (res.success) { showToast('注册成功！', 'success'); setTimeout(function() { window.location.href = 'friend.html'; }, 800); } else { showToast(res.error || '注册失败', 'error'); }
+    }).catch(function() { showToast('网络错误，请检查连接', 'error'); });
   }
-  else { const res = HQ.UserDB.login(phone, password); if (res.success) { showToast('登录成功！', 'success'); setTimeout(() => { window.location.href = 'friend.html'; }, 800); } else { showToast(res.error, 'error'); } }
+  else { HQ.UserDB.login(phone, password).then(function(res) {
+    if (res.success) { showToast('登录成功！', 'success'); setTimeout(function() { window.location.href = 'friend.html'; }, 800); } else { showToast(res.error || '登录失败', 'error'); }
+  }).catch(function() { showToast('网络错误，请检查连接', 'error'); }); }
 });
 // 监听自定义头像输入
 document.getElementById('avatar-custom').addEventListener('input', function() {
